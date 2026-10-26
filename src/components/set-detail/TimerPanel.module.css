@@ -1,0 +1,112 @@
+.panel {
+  --status-c: var(--ink-3);
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  box-shadow: 8px 8px 0 -1px var(--paper), 8px 8px 0 0 var(--accent-line);
+}
+.panel[data-status="running"], .dock[data-status="running"] { --status-c: var(--accent); }
+.panel[data-status="paused"], .dock[data-status="paused"] { --status-c: var(--medium); }
+.panel[data-status="stopped"], .dock[data-status="stopped"] { --status-c: var(--ink-2); }
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--status-c);
+}
+.dot { width: 8px; height: 8px; background: var(--status-c); }
+[data-status="running"] .dot { border-radius: 50%; animation: pulse 1.2s ease-in-out infinite; }
+[data-status="paused"] .dot { width: 8px; background: none; border-inline: 3px solid var(--status-c); }
+@keyframes pulse { 50% { opacity: 0.25; } }
+
+.readout { display: grid; gap: 6px; }
+.clock {
+  font-size: clamp(2.75rem, 12vw, 3.75rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  transition: color 0.2s;
+}
+[data-status="running"] .clock { color: var(--accent); }
+[data-status="paused"] .clock { opacity: 0.7; }
+
+.split {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--rule);
+  background: var(--paper-2);
+}
+.splitValue { font-size: 1.125rem; font-weight: 500; }
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.primary { grid-column: 1 / -1; }
+.secondary { min-height: 48px; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.stats > div { display: grid; gap: 2px; min-width: 0; }
+.stats > div + div { padding-left: 12px; border-left: 1px solid var(--rule); }
+.stats dd { font-size: 1.125rem; font-weight: 500; white-space: nowrap; }
+.stats small { font-size: 0.6875rem; color: var(--ink-3); }
+
+.note { font-size: 0.8125rem; color: var(--ink-3); }
+
+/* ---------- Mobile dock ---------- */
+
+.dock {
+  --status-c: var(--ink-3);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule-strong);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.25s var(--ease), opacity 0.25s;
+}
+.dock[data-hidden] { transform: translateY(110%); opacity: 0; pointer-events: none; }
+
+.dockReadout { display: grid; gap: 2px; }
+.dockClock { font-size: 1.375rem; font-weight: 500; line-height: 1; }
+.dock[data-status="running"] .dockClock { color: var(--accent); }
+.dockControls { display: flex; gap: 8px; }
+
+@media (min-width: 1024px) {
+  .dock { display: none; }
+}
