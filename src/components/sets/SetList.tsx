@@ -1,27 +1,88 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Checkbox } from "@/components/Checkbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { ArrowRightIcon, CheckIcon, PlusIcon, TrashIcon } from "@/components/Icons";
+import { AlertIcon, ArrowRightIcon, CheckIcon, DownloadIcon, PlusIcon, TrashIcon } from "@/components/Icons";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
+import { downloadProblemSets, preloadXlsx } from "@/lib/excel/transfer";
 import { formatDate, formatDateTime, plural } from "@/lib/format";
-import { deleteSet } from "@/lib/problem-sets";
+import { deleteSet, getListSnapshot } from "@/lib/problem-sets";
 import { getStats } from "@/lib/timer";
 import type { ProblemSet } from "@/lib/types";
+import { ImportSets } from "./SetTransfer";
 import styles from "./SetList.module.css";
+
+interface Toast {
+  tone: "success" | "error";
+  message: string;
+}
+
+/** What an export covers: everything, the selection, or one card's set. */
+type ExportTarget = "all" | "selected" | `set:${string}`;
 
 export function SetList() {
   const sets = useProblemSets();
   const [pendingDelete, setPendingDelete] = useState<ProblemSet | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const [exportTarget, setExportTarget] = useState<ExportTarget | null>(null);
+  const exporting = useRef(false);
+  const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(() => new Set());
 
   useEffect(() => {
     if (!toast) return;
-    const t = window.setTimeout(() => setToast(null), 3200);
+    const t = window.setTimeout(() => setToast(null), toast.tone === "error" ? 6000 : 3200);
     return () => window.clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    if (highlightIds.size === 0) return;
+    const t = window.setTimeout(() => setHighlightIds(new Set()), 4000);
+    return () => window.clearTimeout(t);
+  }, [highlightIds]);
+
+  // Selection only counts sets that are still displayed (others may be deleted, e.g. in another tab).
+  const selectedCount = sets?.filter((s) => selected.has(s.id)).length ?? 0;
+  const allSelected = !!sets && sets.length > 0 && selectedCount === sets.length;
+  const firstHighlighted = sets?.find((s) => highlightIds.has(s.id))?.id;
+
+  const toggle = (id: string, on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  /** Download sets as one .xlsx. Read-only: stored sets and running timers are untouched. */
+  async function runExport(target: ExportTarget) {
+    if (exporting.current) return;
+    // Read from storage at click time, in display order.
+    const all = getListSnapshot();
+    const chosen =
+      target === "all" ? all
+      : target === "selected" ? all.filter((s) => selected.has(s.id))
+      : all.filter((s) => `set:${s.id}` === target);
+    if (chosen.length === 0) {
+      setToast({ tone: "error", message: target === "all" ? "There are no sets to export yet." : "Select at least one set to export." });
+      return;
+    }
+    exporting.current = true;
+    setExportTarget(target);
+    try {
+      const fileName = await downloadProblemSets(chosen, { all: target === "all" });
+      const what = chosen.length === 1 ? `“${chosen[0]!.name}”` : plural(chosen.length, "set");
+      setToast({ tone: "success", message: `Exported ${what} as ${fileName}` });
+    } catch {
+      setToast({ tone: "error", message: "The Excel file couldn’t be created. Check your connection and try again." });
+    } finally {
+      exporting.current = false;
+      setExportTarget(null);
+    }
+  }
 
   const totals = sets?.reduce(
     (acc, s) => {
@@ -32,6 +93,9 @@ export function SetList() {
     },
     { problems: 0, solved: 0 },
   );
+
+  const busyIcon = (target: ExportTarget) =>
+    exportTarget === target ? <span className="spinner" aria-hidden="true" /> : <DownloadIcon />;
 
   return (
     <>
@@ -59,6 +123,72 @@ export function SetList() {
         )}
       </header>
 
+      {sets && (
+        <div className={styles.toolbar} role="region" aria-label="Select, import and export sets">
+          <div className={styles.selection}>
+            {sets.length > 0 ? (
+              <>
+                <Checkbox
+                  checked={allSelected}
+                  indeterminate={selectedCount > 0 && !allSelected}
+                  onChange={(on) => setSelected(on ? new Set(sets.map((s) => s.id)) : new Set())}
+                  label="Select all"
+                  showLabel
+                />
+                {/* role="status", not aria-live: Radix's aria-hiding keeps [aria-live] regions (and
+                    their ancestors) exposed behind an open dialog. */}
+                <span className={`mono tabular ${styles.count}`} role="status">
+                  {selectedCount} of {plural(sets.length, "set")} selected
+                </span>
+                <button
+                  type="button"
+                  className="btn btn--sm btn--ghost"
+                  onClick={() => setSelected(new Set())}
+                  disabled={selectedCount === 0}
+                >
+                  Deselect all
+                </button>
+              </>
+            ) : (
+              <span className={styles.count}>No sets yet — import a workbook or create a set.</span>
+            )}
+          </div>
+
+          <div className={styles.bulkActions}>
+            <ImportSets
+              onImported={(imported) => {
+                setHighlightIds(new Set(imported.map((s) => s.id)));
+              }}
+            />
+            <button
+              type="button"
+              className={`btn ${styles.exportSelected}`}
+              onClick={() => void runExport("selected")}
+              onPointerEnter={preloadXlsx}
+              onFocus={preloadXlsx}
+              disabled={selectedCount === 0}
+              aria-disabled={exportTarget !== null || undefined}
+              aria-busy={exportTarget === "selected" || undefined}
+            >
+              {busyIcon("selected")} Export selected
+              {selectedCount > 0 && <span className={`mono tabular ${styles.badge}`}>{selectedCount}</span>}
+            </button>
+            <button
+              type="button"
+              className={`btn ${styles.exportAll}`}
+              onClick={() => void runExport("all")}
+              onPointerEnter={preloadXlsx}
+              onFocus={preloadXlsx}
+              disabled={sets.length === 0}
+              aria-disabled={exportTarget !== null || undefined}
+              aria-busy={exportTarget === "all" || undefined}
+            >
+              {busyIcon("all")} Export all
+            </button>
+          </div>
+        </div>
+      )}
+
       {sets === null ? (
         <ul className={styles.grid} aria-busy="true" aria-label="Loading problem sets">
           {[0, 1, 2].map((i) => (
@@ -74,7 +204,19 @@ export function SetList() {
       ) : (
         <ul className={styles.grid}>
           {sets.map((s, i) => (
-            <SetCard key={s.id} set={s} index={sets.length - i} onDelete={() => setPendingDelete(s)} />
+            <SetCard
+              key={s.id}
+              set={s}
+              index={sets.length - i}
+              selected={selected.has(s.id)}
+              onSelect={(on) => toggle(s.id, on)}
+              highlight={highlightIds.has(s.id)}
+              scrollIntoView={s.id === firstHighlighted}
+              exporting={exportTarget === `set:${s.id}`}
+              exportDisabled={exportTarget !== null}
+              onExport={() => void runExport(`set:${s.id}`)}
+              onDelete={() => setPendingDelete(s)}
+            />
           ))}
         </ul>
       )}
@@ -88,7 +230,8 @@ export function SetList() {
         onConfirm={() => {
           if (!pendingDelete) return;
           deleteSet(pendingDelete.id);
-          setToast(`Deleted “${pendingDelete.name}”`);
+          toggle(pendingDelete.id, false);
+          setToast({ tone: "success", message: `Deleted “${pendingDelete.name}”` });
           setPendingDelete(null);
         }}
       >
@@ -98,17 +241,56 @@ export function SetList() {
         </p>
       </ConfirmDialog>
 
-      {toast && (
-        <div className="toast" role="status">
-          <CheckIcon width={16} height={16} /> {toast}
-        </div>
-      )}
+      {toast &&
+        (toast.tone === "error" ? (
+          <div className="toast toast--error" role="alert">
+            <AlertIcon width={16} height={16} /> {toast.message}
+          </div>
+        ) : (
+          <div className="toast" role="status">
+            <CheckIcon width={16} height={16} /> {toast.message}
+          </div>
+        ))}
     </>
   );
 }
 
-function SetCard({ set, index, onDelete }: { set: ProblemSet; index: number; onDelete: () => void }) {
+interface SetCardProps {
+  set: ProblemSet;
+  index: number;
+  selected: boolean;
+  onSelect: (selected: boolean) => void;
+  /** Just imported: briefly marked. */
+  highlight: boolean;
+  /** The first just-imported card is scrolled into view. */
+  scrollIntoView: boolean;
+  exporting: boolean;
+  exportDisabled: boolean;
+  onExport: () => void;
+  onDelete: () => void;
+}
+
+function SetCard({
+  set,
+  index,
+  selected,
+  onSelect,
+  highlight,
+  scrollIntoView,
+  exporting,
+  exportDisabled,
+  onExport,
+  onDelete,
+}: SetCardProps) {
+  const ref = useRef<HTMLLIElement>(null);
   const stats = getStats(set);
+
+  useEffect(() => {
+    if (!scrollIntoView) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    ref.current?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  }, [scrollIntoView]);
+
   const sheet = getSheet(set.sheetId);
   const status =
     stats.total > 0 && stats.solved === stats.total
@@ -122,9 +304,18 @@ function SetCard({ set, index, onDelete }: { set: ProblemSet; index: number; onD
             : { key: "new", label: "Not started" };
 
   return (
-    <li className={styles.card} data-status={status.key}>
+    <li
+      ref={ref}
+      className={styles.card}
+      data-status={status.key}
+      data-selected={selected || undefined}
+      data-highlight={highlight || undefined}
+    >
       <div className={styles.cardTop}>
-        <span className={`mono ${styles.index}`}>No. {String(index).padStart(3, "0")}</span>
+        <span className={styles.select}>
+          <Checkbox checked={selected} onChange={onSelect} label={`Select ${set.name}`} />
+          <span className={`mono ${styles.index}`}>No. {String(index).padStart(3, "0")}</span>
+        </span>
         <span className={styles.status}>
           <span className={styles.statusDot} aria-hidden="true" />
           {status.label}
@@ -171,9 +362,21 @@ function SetCard({ set, index, onDelete }: { set: ProblemSet; index: number; onD
       </div>
 
       <div className={styles.actions}>
-        <button type="button" className={`btn btn--sm btn--ghost ${styles.delete}`} onClick={onDelete} aria-label={`Delete ${set.name}`}>
-          <TrashIcon /> Delete
-        </button>
+        <div className={styles.actionGroup}>
+          <button type="button" className={`btn btn--sm btn--ghost ${styles.delete}`} onClick={onDelete} aria-label={`Delete ${set.name}`}>
+            <TrashIcon /> Delete
+          </button>
+          <button
+            type="button"
+            className="btn btn--sm btn--ghost"
+            onClick={onExport}
+            aria-disabled={exportDisabled || undefined}
+            aria-busy={exporting || undefined}
+            aria-label={`Export ${set.name} to Excel`}
+          >
+            {exporting ? <span className="spinner" aria-hidden="true" /> : <DownloadIcon />} Export
+          </button>
+        </div>
         <Link href={`/sets/${set.id}`} className="btn btn--sm" tabIndex={-1} aria-hidden="true">
           {stats.solved > 0 || set.session.status !== "idle" ? "Resume" : "Open"} <ArrowRightIcon />
         </Link>

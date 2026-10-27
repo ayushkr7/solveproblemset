@@ -1,3 +1,44 @@
+/* Bulk toolbar: selection on the left, import/export on the right. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin: -12px 0 24px;
+  padding: 8px 12px 8px 4px;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+}
+@media (min-width: 720px) {
+  /* Stays in reach while scrolling a long grid. */
+  .toolbar { position: sticky; top: calc(var(--header-h) + 8px); z-index: 20; }
+}
+.selection { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; min-height: 44px; }
+.selection > .count:only-child { padding-left: 12px; }
+.count { font-size: 0.8125rem; color: var(--ink-2); }
+.bulkActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.badge {
+  min-width: 20px;
+  padding: 0 5px;
+  border: 1px solid currentColor;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.exportAll { --btn-fg: var(--accent); --btn-border: var(--accent); }
+.exportAll:hover { --btn-bg: var(--accent); --btn-fg: var(--accent-ink); --btn-border: var(--accent); }
+
+@media (max-width: 719px) {
+  .toolbar { padding: 8px 8px 12px 4px; }
+  .selection, .bulkActions { flex: 1 1 100%; }
+  .bulkActions { gap: 6px; padding-left: 4px; }
+  /* Two rows: [Import sets][i][Export all] / [Export selected]. */
+  .bulkActions > div, .bulkActions > div > button:first-child, .exportAll { flex: 1 1 auto; }
+  .exportSelected { order: 1; flex: 1 1 100%; }
+  .bulkActions :global(.btn:not(.btn--icon)) { padding-inline: 10px; gap: 6px; }
+}
+
 .totals {
   display: flex;
   flex-wrap: wrap;
@@ -29,11 +70,24 @@
 .card:hover { background: var(--surface-hover); box-shadow: 6px 6px 0 -1px var(--paper), 6px 6px 0 0 var(--accent-line); transform: translate(-2px, -2px); }
 .card:has(.link:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 
+.card[data-selected] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.card[data-selected]:hover { box-shadow: inset 0 0 0 1px var(--accent), 6px 6px 0 -1px var(--paper), 6px 6px 0 0 var(--accent-line); }
+.card[data-highlight] { animation: arrive 1.6s var(--ease); }
+@keyframes arrive {
+  0%, 60% { outline: 2px solid var(--accent); outline-offset: 4px; background: var(--accent-soft); }
+}
+
 .cardSkeleton { min-height: 220px; }
 .cardSkeleton:hover { transform: none; box-shadow: none; }
 .skLine { display: block; height: 12px; }
 
-.cardTop { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cardTop { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: -10px 0 -10px -12px; }
+/* Above the card-wide link overlay, so the checkbox stays clickable. */
+.select { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 2px; }
 .index { font-size: 0.75rem; color: var(--ink-3); }
 
 .status {
@@ -87,12 +141,14 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   padding-top: 4px;
 }
 .actions > * { position: relative; z-index: 1; }
+.actionGroup { display: flex; align-items: center; gap: 4px; }
 .delete { --btn-fg: var(--danger); margin-left: -12px; }
 .delete:hover { --btn-bg: var(--danger-soft); --btn-fg: var(--danger); }
 

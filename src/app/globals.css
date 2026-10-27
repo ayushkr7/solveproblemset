@@ -15,7 +15,7 @@
   --surface-hover: #fffdf8;
   --ink: #14161b;
   --ink-2: #474c57;
-  --ink-3: #686d77;
+  --ink-3: #5f646e; /* ≥ 4.5:1 on --paper-2 (WCAG AA small text) */
   --rule: #d3cdbd;
   --rule-strong: #14161b;
   --grid-minor: rgb(31 79 209 / 0.055);
@@ -198,6 +198,8 @@ p { text-wrap: pretty; }
 }
 
 main { flex: 1; }
+/* Focus lands here programmatically (skip link, dialog focus fallback); no ring needed. */
+main:focus { outline: none; }
 
 .page { padding-block: 32px 80px; }
 @media (min-width: 1024px) { .page { padding-block: 56px 112px; } }
@@ -265,6 +267,7 @@ main { flex: 1; }
 .btn:hover { --btn-bg: var(--ink); --btn-fg: var(--paper); }
 .btn:active { transform: translateY(1px); }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn[aria-busy="true"]:disabled, .btn[aria-busy="true"][aria-disabled="true"] { opacity: 0.75; }
 .btn svg { width: 16px; height: 16px; flex: none; }
 
 .btn--primary { --btn-bg: var(--accent); --btn-fg: var(--accent-ink); --btn-border: var(--accent); }
@@ -313,6 +316,49 @@ main { flex: 1; }
 .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .input[aria-invalid="true"] { border-color: var(--danger); }
 .input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px var(--danger-soft); }
+
+/* ---------- Checkbox (components/Checkbox.tsx) ---------- */
+
+.checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.checkbox[data-disabled] { opacity: 0.4; cursor: not-allowed; }
+.checkbox__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.checkbox__box {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-inline: 10px;
+  border: 1.5px solid var(--ink-2);
+  background: var(--surface);
+  color: transparent;
+  pointer-events: none;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.checkbox__box svg { grid-area: 1 / 1; width: 16px; height: 16px; stroke-width: 2.5; }
+.checkbox__dash { display: none; }
+.checkbox:hover .checkbox__box { border-color: var(--accent); }
+.checkbox__input:checked + .checkbox__box,
+.checkbox__input:indeterminate + .checkbox__box { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.checkbox__input:indeterminate + .checkbox__box .checkbox__tick { display: none; }
+.checkbox__input:indeterminate + .checkbox__box .checkbox__dash { display: block; }
+.checkbox__input:active + .checkbox__box { transform: scale(0.92); }
+.checkbox__input:focus-visible + .checkbox__box { outline: 2px solid var(--focus); outline-offset: 2px; }
+.checkbox__label { font-weight: 600; font-size: 0.9375rem; padding-right: 4px; }
 
 /* ---------- Difficulty badge ---------- */
 
@@ -365,37 +411,65 @@ main { flex: 1; }
 
 /* ---------- Dialog ---------- */
 
+/* components/ui/dialog.tsx. Radix portals overlay and content into <body> and
+   manages scroll lock, focus and pointer-events; this is presentation only. */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--backdrop);
+  backdrop-filter: blur(2px);
+}
+.dialog-overlay[data-state="open"] { animation: overlay-in 0.2s var(--ease); }
+@keyframes overlay-in { from { opacity: 0; } }
+
 .dialog {
+  /* Centred in the viewport; long content scrolls inside (head and foot stay put). */
+  position: fixed;
+  inset: 0;
+  z-index: 101;
   width: min(480px, calc(100vw - 32px));
+  height: fit-content;
   max-height: calc(100dvh - 32px);
   margin: auto;
-  padding: 0;
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
   box-shadow: var(--shadow-dialog);
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
-.dialog::backdrop { background: var(--backdrop); backdrop-filter: blur(2px); }
-.dialog[open] { animation: dialog-in 0.2s var(--ease); }
+.dialog:focus { outline: none; }
+.dialog--wide { width: min(760px, calc(100vw - 32px)); }
+.dialog[data-state="open"] { animation: dialog-in 0.2s var(--ease); }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(8px); } }
 
+/* Head and foot stay in view while long dialog content scrolls. */
 .dialog__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
   border-bottom: 1px solid var(--rule);
+  background: var(--surface);
 }
 .dialog__body { display: grid; gap: 12px; padding: 24px 20px; }
+.dialog__header { display: grid; gap: 12px; }
 .dialog__title { font-size: 1.5rem; letter-spacing: -0.025em; }
 .dialog__text { color: var(--ink-2); }
 .dialog__list { display: grid; gap: 6px; padding-left: 0; list-style: none; font-size: 0.9375rem; color: var(--ink-2); }
 .dialog__list li { display: flex; gap: 10px; }
 .dialog__list li::before { content: "—"; color: var(--ink-3); font-family: var(--font-mono); }
 .dialog__foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap-reverse;
   justify-content: flex-end;
@@ -466,6 +540,8 @@ main { flex: 1; }
   box-shadow: var(--shadow-dialog);
   animation: dialog-in 0.2s var(--ease);
 }
+.toast svg { flex: none; }
+.toast--error { background: var(--danger); color: var(--paper); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

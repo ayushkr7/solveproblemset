@@ -50,3 +50,5 @@ export const InfoIcon = (p: IconProps) => (
 export const CheckIcon = (p: IconProps) => <Icon {...p}><path d="m5 12.5 4.5 4.5L19 7.5" /></Icon>;
 export const CloseIcon = (p: IconProps) => <Icon {...p}><path d="M6 6l12 12M18 6 6 18" /></Icon>;
 export const PencilIcon = (p: IconProps) => <Icon {...p}><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" /></Icon>;
+export const UploadIcon = (p: IconProps) => <Icon {...p}><path d="M12 15V4M7 9l5-5 5 5M4 15v5h16v-5" /></Icon>;
+export const DownloadIcon = (p: IconProps) => <Icon {...p}><path d="M12 4v11M7 10l5 5 5-5M4 15v5h16v-5" /></Icon>;

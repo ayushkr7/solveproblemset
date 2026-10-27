@@ -133,7 +133,14 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
 export function TimerDock({ set, now, actions, hidden }: { set: ProblemSet; now: number; actions: TimerActions; hidden: boolean }) {
   const { status } = set.session;
   return (
-    <div className={styles.dock} data-status={status} data-hidden={hidden || undefined} inert={hidden}>
+    // `right-scroll-bar-position`: the dialog scroll lock offsets this fixed bar by the
+    // removed scrollbar's width, so it doesn't jump when a dialog opens.
+    <div
+      className={`${styles.dock} right-scroll-bar-position`}
+      data-status={status}
+      data-hidden={hidden || undefined}
+      inert={hidden}
+    >
       <div className={styles.dockReadout}>
         <span className={styles.status}>
           <span className={styles.dot} aria-hidden="true" />

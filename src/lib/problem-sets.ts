@@ -179,6 +179,27 @@ export function saveSet(set: ProblemSet): void {
 }
 
 /**
+ * Save several *new* sets as one unit (bulk import). If any write fails, the
+ * ones already written are removed again, so storage is never left partially
+ * imported. Existing sets are never touched: an id already in use is refused.
+ */
+export function saveNewSets(sets: readonly ProblemSet[]): void {
+  const written: string[] = [];
+  try {
+    for (const set of sets) {
+      const key = STORAGE_KEYS.set(set.id);
+      if (readRaw(key) !== null) throw new Error(`A set with id ${set.id} already exists`);
+      writeRaw(key, JSON.stringify(set));
+      written.push(key);
+    }
+  } catch (err) {
+    written.forEach(removeRaw);
+    throw err;
+  }
+  if (written.length > 0) emit();
+}
+
+/**
  * Apply `updater` to the latest stored version of a set. Reading fresh from
  * storage (rather than a React snapshot) avoids clobbering a concurrent write.
  */

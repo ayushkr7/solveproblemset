@@ -1,7 +1,16 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
-import { CloseIcon } from "./Icons";
+import { useRef, type ReactNode } from "react";
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -17,8 +26,8 @@ interface ConfirmDialogProps {
 }
 
 /**
- * Modal confirmation built on <dialog>: native focus trapping, Esc to cancel,
- * inert background. Focus starts on Cancel so a stray Enter can't confirm.
+ * Confirmation modal (role "alertdialog"). Focus starts on Cancel so a stray
+ * Enter can't confirm; Esc, the close button and the backdrop all cancel.
  */
 export function ConfirmDialog({
   open,
@@ -31,59 +40,32 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const ref = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
-  const titleId = useId();
-  const descId = useId();
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-      cancelRef.current?.focus();
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
-  }, [open]);
 
   return (
-    <dialog
-      ref={ref}
-      className="dialog"
-      aria-labelledby={titleId}
-      aria-describedby={descId}
-      onCancel={(e) => {
-        e.preventDefault();
-        onCancel();
-      }}
-      onClick={(e) => {
-        // Click on the backdrop (the dialog element itself) cancels.
-        if (e.target === e.currentTarget) onCancel();
-      }}
-    >
-      <div className="dialog__head">
-        <span className="label">{eyebrow}</span>
-        <button type="button" className="btn btn--ghost btn--icon" onClick={onCancel} aria-label="Close">
-          <CloseIcon />
-        </button>
-      </div>
-      <div className="dialog__body">
-        <h2 id={titleId} className="dialog__title">{title}</h2>
-        <div id={descId} className="dialog__text">{children}</div>
-      </div>
-      <div className="dialog__foot">
-        <button ref={cancelRef} type="button" className="btn" onClick={onCancel}>
-          {cancelLabel}
-        </button>
-        <button
-          type="button"
-          className={`btn ${tone === "danger" ? "btn--danger-solid" : "btn--primary"}`}
-          onClick={onConfirm}
-        >
-          {confirmLabel}
-        </button>
-      </div>
-    </dialog>
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent role="alertdialog" eyebrow={eyebrow} initialFocus={cancelRef}>
+        <DialogBody>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{children}</DialogDescription>
+          </DialogHeader>
+        </DialogBody>
+        <DialogFooter>
+          <DialogClose asChild>
+            <button ref={cancelRef} type="button" className="btn">
+              {cancelLabel}
+            </button>
+          </DialogClose>
+          <button
+            type="button"
+            className={`btn ${tone === "danger" ? "btn--danger-solid" : "btn--primary"}`}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
