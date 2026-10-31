@@ -1,9 +1,12 @@
 /**
- * Problem-source registry. To add a sheet: extend `SheetId` in lib/types.ts,
- * add its metadata here and give it a `load` function. A loader may read
- * bundled data (as below) or call a remote API; callers only see a Promise.
+ * Problem-source registry. To add a source: extend `SheetId` in lib/types.ts,
+ * add its metadata here and give it a `load` function. Bundled sheets read
+ * their data file; live sources call this app's /api/sources/<id> route, which
+ * fetches upstream on the server (lib/sources/). Callers only see a Promise.
  */
+import type { LiveCatalogResponse } from "@/lib/sources/serve";
 import type { CatalogProblem, SheetId } from "@/lib/types";
+import { fromBlind75, fromStriverSheet } from "./problems";
 
 export interface SheetSource {
   id: SheetId;
@@ -12,12 +15,43 @@ export interface SheetSource {
   author: string;
   description: string;
   homepage: string;
+  /** `sheet`: a fixed list bundled with the app. `live`: fetched from the site and filtered for quality. */
+  kind: "sheet" | "live";
+  /** How a set's problems are chosen: per Easy/Medium/Hard counts, or by a rating range. */
+  selectBy: "difficulty" | "rating";
   load: () => Promise<CatalogProblem[]>;
 }
 
-const loadBundled = (id: SheetId) => () => import("./catalog").then((m) => m.problemsForSheet(id));
+async function loadLive(id: SheetId): Promise<CatalogProblem[]> {
+  const res = await fetch(`/api/sources/${id}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return ((await res.json()) as LiveCatalogResponse).problems;
+}
 
+// Each sheet's data file is a separate chunk, fetched only when that sheet is used.
 export const SHEETS: readonly SheetSource[] = [
+  {
+    id: "leetcode",
+    name: "LeetCode",
+    shortName: "LC",
+    author: "leetcode.com",
+    description: "Free, well-liked problems fetched live: 500+ likes and at least 80% positive votes.",
+    homepage: "https://leetcode.com/problemset/",
+    kind: "live",
+    selectBy: "difficulty",
+    load: () => loadLive("leetcode"),
+  },
+  {
+    id: "codeforces",
+    name: "Codeforces",
+    shortName: "CF",
+    author: "codeforces.com",
+    description: "Problems from rated rounds since 2016, fetched live and picked by rating.",
+    homepage: "https://codeforces.com/problemset",
+    kind: "live",
+    selectBy: "rating",
+    load: () => loadLive("codeforces"),
+  },
   {
     id: "striver-a2z",
     name: "Striver's A2Z DSA Sheet",
@@ -25,7 +59,9 @@ export const SHEETS: readonly SheetSource[] = [
     author: "takeUforward",
     description: "A step-by-step path from fundamentals to advanced DP, graphs and tries.",
     homepage: "https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2",
-    load: loadBundled("striver-a2z"),
+    kind: "sheet",
+    selectBy: "difficulty",
+    load: () => import("./a2zproblemset").then((m) => fromStriverSheet(m.A2Z_PROBLEMS)),
   },
   {
     id: "striver-180",
@@ -34,7 +70,20 @@ export const SHEETS: readonly SheetSource[] = [
     author: "takeUforward",
     description: "The interview-critical core: the problems that show up again and again.",
     homepage: "https://takeuforward.org/interviews/strivers-sde-sheet-top-coding-interview-problems",
-    load: loadBundled("striver-180"),
+    kind: "sheet",
+    selectBy: "difficulty",
+    load: () => import("./striver180problemset").then((m) => fromStriverSheet(m.STRIVER_180_PROBLEMS)),
+  },
+  {
+    id: "neetcode-blind75",
+    name: "NeetCode's Blind 75",
+    shortName: "B75",
+    author: "NeetCode",
+    description: "The classic 75 interview problems, one or two for every core pattern.",
+    homepage: "https://neetcode.io/practice",
+    kind: "sheet",
+    selectBy: "difficulty",
+    load: () => import("./neetcodeBlind75").then((m) => fromBlind75(m.NEETCODE_BLIND_75_PROBLEMS)),
   },
 ];
 

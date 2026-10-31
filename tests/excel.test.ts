@@ -13,10 +13,10 @@ import type { CatalogProblem, ProblemSet } from "../src/lib/types";
 const MIN = 60_000;
 
 const catalog: CatalogProblem[] = [
-  { id: "h1", title: "H1", url: "https://leetcode.com/problems/h1/", difficulty: "hard", topic: "Graphs", order: 0 },
-  { id: "e1", title: "E1", url: "https://leetcode.com/problems/e1/", difficulty: "easy", topic: "Arrays", order: 1 },
-  { id: "m1", title: "M1", url: "https://leetcode.com/problems/m1/", difficulty: "medium", topic: "", order: 2 },
-  { id: "e2", title: "E2", url: "https://leetcode.com/problems/e2/", difficulty: "easy", topic: "Arrays", order: 3 },
+  { id: "h1", title: "H1", url: "https://leetcode.com/problems/h1/", leetCodeUrl: null, difficulty: "hard", topic: "Graphs", order: 0 },
+  { id: "e1", title: "E1", url: "https://leetcode.com/problems/e1/", leetCodeUrl: "https://leetcode.com/problems/e1-lc/", difficulty: "easy", topic: "Arrays", order: 1 },
+  { id: "m1", title: "M1", url: "https://leetcode.com/problems/m1/", leetCodeUrl: null, difficulty: "medium", topic: "", order: 2 },
+  { id: "e2", title: "E2", url: "https://leetcode.com/problems/e2/", leetCodeUrl: null, difficulty: "easy", topic: "Arrays", order: 3 },
 ];
 
 function make(name: string, counts: { easy: number; medium: number; hard: number }): ProblemSet {
@@ -43,7 +43,7 @@ const summary = (s: ProblemSet) => ({
   sheetId: s.sheetId,
   createdAt: s.createdAt,
   requested: s.requested,
-  problems: s.problems.map((p) => [p.title, p.url, p.difficulty, p.topic, p.solved, p.timeMs]),
+  problems: s.problems.map((p) => [p.title, p.url, p.leetCodeUrl, p.difficulty, p.topic, p.solved, p.timeMs]),
 });
 
 function ok(r: ImportResult) {
@@ -295,4 +295,32 @@ test("export file names", () => {
   assert.equal(exportFileName([{ name: "a" }, { name: "b" }, { name: "c" }], now), "DSA_3_Problem_Sets_2026-10-27.xlsx");
   assert.equal(exportFileName([{ name: "Graphs — week 1!" }], now), "Graphs_week_1_2026-10-27.xlsx");
   assert.equal(exportFileName([{ name: "???" }], now), "DSA_Practice_Set_2026-10-27.xlsx");
+});
+
+test("optional Rating column: Codeforces ratings round-trip; validated; blank allowed", async () => {
+  const cf: CatalogProblem[] = [
+    { id: "cf-1A", title: "A", url: "https://codeforces.com/problemset/problem/1/A", leetCodeUrl: null, difficulty: "easy", topic: "math", order: 1, rating: 800 },
+    { id: "cf-1B", title: "B", url: "https://codeforces.com/problemset/problem/1/B", leetCodeUrl: null, difficulty: "medium", topic: "", order: 2, rating: 1400 },
+  ];
+  const set = buildProblemSet({ name: "CF", sheetId: "codeforces", counts: { easy: 1, medium: 1, hard: 0 } }, cf, 0);
+  const back = ok(parseWorkbook(await readXlsx((await writeXlsx(buildWorkbook([set], 0))).buffer), 0)).sets[0]!.set;
+  assert.equal(back.sheetId, "codeforces");
+  assert.deepEqual(back.problems.map((p) => p.rating), [800, 1400]);
+
+  const withRating = (r: Cell) => parseWorkbook([setsSheet(SET_A), table("Problems", [[...PROB_HEAD, "Rating"], [...prob("S1", 1), r]])]);
+  assert.equal(ok(withRating(1900)).sets[0]!.set.problems[0]!.rating, 1900);
+  assert.equal(ok(withRating(null)).sets[0]!.set.problems[0]!.rating, null);
+  assert.equal(ok(parseWorkbook([setsSheet(SET_A), problemsSheet(prob("S1", 1))])).sets[0]!.set.problems[0]!.rating, null, "column may be absent");
+  assert.match(errors(withRating("hard")), /Rating “hard” must be a whole number/);
+  assert.match(errors(withRating(1450.5)), /Rating “1450\.5” must be a whole number/);
+});
+
+test("optional LeetCodeURL column: read when present, validated, blank allowed", () => {
+  const withLc = (lc: Cell) =>
+    parseWorkbook([setsSheet(SET_A), table("Problems", [[...PROB_HEAD, "LeetCodeURL"], [...prob("S1", 1), lc]])]);
+  assert.equal(ok(withLc("https://leetcode.com/problems/two-sum/")).sets[0]!.set.problems[0]!.leetCodeUrl, "https://leetcode.com/problems/two-sum/");
+  assert.equal(ok(withLc(null)).sets[0]!.set.problems[0]!.leetCodeUrl, null);
+  assert.equal(ok(parseWorkbook([setsSheet(SET_A), problemsSheet(prob("S1", 1))])).sets[0]!.set.problems[0]!.leetCodeUrl, null, "column may be absent");
+  assert.match(errors(withLc("not a link")), /row 2: LeetCodeURL “not a link” isn't a valid web address/);
+  assert.equal(ok(parseWorkbook([table("ProblemSets", [SET_HEAD, ["S1", "B", "NeetCode Blind 75", "2026-10-31"]]), problemsSheet(prob("S1", 1))])).sets[0]!.set.sheetId, "neetcode-blind75");
 });

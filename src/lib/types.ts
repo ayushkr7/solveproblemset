@@ -15,18 +15,23 @@ export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
 
 export const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 };
 
-/** Identifier of a problem source. Add new sheets in `src/data/sheets.ts`. */
-export type SheetId = "striver-a2z" | "striver-180";
+/** Identifier of a problem source. Add new sources in `src/data/sheets.ts`. */
+export type SheetId = "striver-a2z" | "striver-180" | "neetcode-blind75" | "leetcode" | "codeforces";
 
 /** A problem as it exists in a source sheet (read-only catalog data). */
 export interface CatalogProblem {
   id: string;
   title: string;
+  /** The sheet's own practice page (takeUforward, NeetCode). */
   url: string;
+  /** The same problem on LeetCode, when there is one. */
+  leetCodeUrl: string | null;
   difficulty: Difficulty;
   topic: string;
   /** Position within the source sheet; used for stable ordering. */
   order: number;
+  /** Codeforces problem rating (800–3500); absent for other sources. */
+  rating?: number;
 }
 
 export interface DifficultyCounts {
@@ -40,9 +45,13 @@ export interface SetProblem {
   id: string;
   title: string;
   url: string;
+  /** `null` when there is no LeetCode equivalent, and for sets saved before links were split. */
+  leetCodeUrl: string | null;
   difficulty: Difficulty;
   topic: string;
   order: number;
+  /** Codeforces problem rating; `null` for other sources. */
+  rating: number | null;
   solved: boolean;
   /** Recorded solve duration in ms of *active* practice time. `null` = no time recorded. */
   timeMs: number | null;

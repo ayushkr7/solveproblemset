@@ -17,6 +17,8 @@ import {
 
 export const NAME_MAX = 60;
 export const PER_DIFFICULTY_MAX = 50;
+/** Most problems in a set picked by rating. */
+export const RATED_COUNT_MAX = 50;
 
 export interface CreateSetInput {
   name: string;
@@ -24,17 +26,21 @@ export interface CreateSetInput {
   counts: DifficultyCounts;
 }
 
-export type FieldErrors = Partial<Record<"name" | "sheetId" | "counts" | "easy" | "medium" | "hard", string>>;
+export type FieldErrors = Partial<
+  Record<"name" | "sheetId" | "counts" | "easy" | "medium" | "hard" | "rating" | "count", string>
+>;
+
+function validateMeta(name: string, sheetId: SheetId | null): FieldErrors {
+  const errors: FieldErrors = {};
+  const trimmed = name.trim();
+  if (!trimmed) errors.name = "Give your problem set a name.";
+  else if (trimmed.length > NAME_MAX) errors.name = `Keep the name under ${NAME_MAX} characters.`;
+  if (!sheetId) errors.sheetId = "Choose a problem source.";
+  return errors;
+}
 
 export function validateInput(input: CreateSetInput, available?: DifficultyCounts): FieldErrors {
-  const errors: FieldErrors = {};
-  const name = input.name.trim();
-  if (!name) errors.name = "Give your problem set a name.";
-  else if (name.length > NAME_MAX) errors.name = `Keep the name under ${NAME_MAX} characters.`;
-
-  if (!input.sheetId) errors.sheetId = "Choose a problem source.";
-
-  return { ...errors, ...validateCounts(input.counts, available) };
+  return { ...validateMeta(input.name, input.sheetId), ...validateCounts(input.counts, available) };
 }
 
 /** Per-difficulty count checks, optionally against what the sheet can supply. */
@@ -53,6 +59,96 @@ export function validateCounts(counts: DifficultyCounts, available?: DifficultyC
     errors.counts = "Add at least one problem.";
   }
   return errors;
+}
+
+/** A set picked by rating: `count` problems rated `min`–`max` inclusive. */
+export interface RatingRequest {
+  min: number;
+  max: number;
+  count: number;
+}
+
+export function validateRatedInput(
+  input: { name: string; sheetId: SheetId | null } & RatingRequest,
+  available?: number,
+): FieldErrors {
+  return { ...validateMeta(input.name, input.sheetId), ...validateRating(input, available) };
+}
+
+/** Range and count checks, optionally against how many problems the range holds. */
+export function validateRating({ min, max, count }: RatingRequest, available?: number): FieldErrors {
+  const errors: FieldErrors = {};
+  if (min > max) errors.rating = "The lowest rating must not be above the highest.";
+  if (!Number.isInteger(count) || count < 1) errors.count = "Enter a whole number, 1 or more.";
+  else if (count > RATED_COUNT_MAX) errors.count = `At most ${RATED_COUNT_MAX} problems.`;
+  else if (!errors.rating && available !== undefined && count > available) {
+    errors.count = `Only ${available} problem${available === 1 ? "" : "s"} rated ${ratingRange(min, max)} available.`;
+  }
+  return errors;
+}
+
+/** "1400" or "1200–1600" */
+export function ratingRange(min: number, max: number): string {
+  return min === max ? String(min) : `${min}–${max}`;
+}
+
+export function inRatingRange(p: Pick<CatalogProblem, "rating">, min: number, max: number): boolean {
+  return p.rating !== undefined && p.rating >= min && p.rating <= max;
+}
+
+export class NotEnoughRatedError extends Error {
+  constructor(min: number, max: number, available: number) {
+    super(`Only ${available} problems rated ${ratingRange(min, max)} are available. Lower the count or widen the range.`);
+    this.name = "NotEnoughRatedError";
+  }
+}
+
+/**
+ * Pick `count` problems rated `min`–`max`, spread evenly over the ratings in
+ * that range (a ladder), lowest rating first. A rating that runs short is
+ * topped up from the others.
+ */
+export function pickByRating(
+  catalog: readonly CatalogProblem[],
+  { min, max, count }: RatingRequest,
+  random: () => number = Math.random,
+): CatalogProblem[] {
+  const buckets = new Map<number, CatalogProblem[]>();
+  for (const p of catalog) {
+    if (!inRatingRange(p, min, max)) continue;
+    const b = buckets.get(p.rating!);
+    if (b) b.push(p);
+    else buckets.set(p.rating!, [p]);
+  }
+  const ratings = [...buckets.keys()].sort((a, b) => a - b);
+  const available = ratings.reduce((n, r) => n + buckets.get(r)!.length, 0);
+  if (available < count) throw new NotEnoughRatedError(min, max, available);
+
+  const quota = new Map(ratings.map((r) => [r, 0]));
+  for (let i = 0; i < count; i++) {
+    const r = ratings[Math.floor(((i + 0.5) * ratings.length) / count)]!;
+    quota.set(r, quota.get(r)! + 1);
+  }
+  let short = 0;
+  for (const r of ratings) {
+    const size = buckets.get(r)!.length;
+    if (quota.get(r)! > size) {
+      short += quota.get(r)! - size;
+      quota.set(r, size);
+    }
+  }
+  while (short > 0) {
+    for (const r of ratings) {
+      if (short > 0 && quota.get(r)! < buckets.get(r)!.length) {
+        quota.set(r, quota.get(r)! + 1);
+        short--;
+      }
+    }
+  }
+
+  return ratings
+    .flatMap((r) => sample(buckets.get(r)!, quota.get(r)!, random))
+    .sort((a, b) => a.rating! - b.rating! || a.order - b.order);
 }
 
 export function countByDifficulty(problems: readonly Pick<CatalogProblem, "difficulty">[]): DifficultyCounts {
@@ -104,6 +200,21 @@ export function pickProblems(
   return picked.sort(compareProblems);
 }
 
+const urlKey = (url: string) => url.trim().toLowerCase().replace(/[?#].*$/, "").replace(/\/+$/, "");
+
+/**
+ * Matcher for "skip problems already in my other sets". Problems match by id,
+ * or by URL: sets made from the older bundled catalog linked straight to LeetCode,
+ * so their `url` is compared with a candidate's LeetCode link too.
+ */
+export function usedProblemMatcher(
+  existing: readonly Pick<SetProblem, "id" | "url">[],
+): (p: Pick<CatalogProblem, "id" | "url" | "leetCodeUrl">) => boolean {
+  const ids = new Set(existing.map((p) => p.id));
+  const urls = new Set(existing.map((p) => urlKey(p.url)));
+  return (p) => ids.has(p.id) || urls.has(urlKey(p.url)) || (p.leetCodeUrl !== null && urls.has(urlKey(p.leetCodeUrl)));
+}
+
 export function createId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -127,9 +238,11 @@ export function buildProblemSet(
       id: p.id,
       title: p.title,
       url: p.url,
+      leetCodeUrl: p.leetCodeUrl,
       difficulty: p.difficulty,
       topic: p.topic,
       order: p.order,
+      rating: p.rating ?? null,
       solved: false,
       timeMs: null,
       solvedAtElapsedMs: null,

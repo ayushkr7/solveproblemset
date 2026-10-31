@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { AlertIcon, ArrowRightIcon, CheckIcon, DownloadIcon, PlusIcon, TrashIcon } from "@/components/Icons";
+import {
+  AlertIcon,
+  ArrowRightIcon,
+  CheckIcon,
+  DownloadIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/Icons";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
 import { downloadProblemSets, preloadXlsx } from "@/lib/excel/transfer";
@@ -27,14 +34,21 @@ export function SetList() {
   const sets = useProblemSets();
   const [pendingDelete, setPendingDelete] = useState<ProblemSet | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const [selected, setSelected] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [exportTarget, setExportTarget] = useState<ExportTarget | null>(null);
   const exporting = useRef(false);
-  const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     if (!toast) return;
-    const t = window.setTimeout(() => setToast(null), toast.tone === "error" ? 6000 : 3200);
+    const t = window.setTimeout(
+      () => setToast(null),
+      toast.tone === "error" ? 6000 : 3200,
+    );
     return () => window.clearTimeout(t);
   }, [toast]);
 
@@ -46,7 +60,8 @@ export function SetList() {
 
   // Selection only counts sets that are still displayed (others may be deleted, e.g. in another tab).
   const selectedCount = sets?.filter((s) => selected.has(s.id)).length ?? 0;
-  const allSelected = !!sets && sets.length > 0 && selectedCount === sets.length;
+  const allSelected =
+    !!sets && sets.length > 0 && selectedCount === sets.length;
   const firstHighlighted = sets?.find((s) => highlightIds.has(s.id))?.id;
 
   const toggle = (id: string, on: boolean) =>
@@ -63,21 +78,38 @@ export function SetList() {
     // Read from storage at click time, in display order.
     const all = getListSnapshot();
     const chosen =
-      target === "all" ? all
-      : target === "selected" ? all.filter((s) => selected.has(s.id))
-      : all.filter((s) => `set:${s.id}` === target);
+      target === "all"
+        ? all
+        : target === "selected"
+          ? all.filter((s) => selected.has(s.id))
+          : all.filter((s) => `set:${s.id}` === target);
     if (chosen.length === 0) {
-      setToast({ tone: "error", message: target === "all" ? "There are no sets to export yet." : "Select at least one set to export." });
+      setToast({
+        tone: "error",
+        message:
+          target === "all"
+            ? "There are no sets to export yet."
+            : "Select at least one set to export.",
+      });
       return;
     }
     exporting.current = true;
     setExportTarget(target);
     try {
-      const fileName = await downloadProblemSets(chosen, { all: target === "all" });
-      const what = chosen.length === 1 ? `“${chosen[0]!.name}”` : plural(chosen.length, "set");
+      const fileName = await downloadProblemSets(chosen, {
+        all: target === "all",
+      });
+      const what =
+        chosen.length === 1
+          ? `“${chosen[0]!.name}”`
+          : plural(chosen.length, "set");
       setToast({ tone: "success", message: `Exported ${what} as ${fileName}` });
     } catch {
-      setToast({ tone: "error", message: "The Excel file couldn’t be created. Check your connection and try again." });
+      setToast({
+        tone: "error",
+        message:
+          "The Excel file couldn’t be created. Check your connection and try again.",
+      });
     } finally {
       exporting.current = false;
       setExportTarget(null);
@@ -95,8 +127,12 @@ export function SetList() {
   );
 
   const busyIcon = (target: ExportTarget) =>
-    exportTarget === target ? <span className="spinner" aria-hidden="true" /> : <DownloadIcon />;
-
+    exportTarget === target ? (
+      <span className="spinner" aria-hidden="true" />
+    ) : (
+      <DownloadIcon />
+    );
+  console.log(sets);
   return (
     <>
       <header className="page-head">
@@ -116,22 +152,37 @@ export function SetList() {
         </div>
         {sets && sets.length > 0 && totals && (
           <dl className={styles.totals}>
-            <div><dt className="label">Sets</dt><dd className="mono tabular">{sets.length}</dd></div>
-            <div><dt className="label">Problems</dt><dd className="mono tabular">{totals.problems}</dd></div>
-            <div><dt className="label">Solved</dt><dd className="mono tabular">{totals.solved}</dd></div>
+            <div>
+              <dt className="label">Sets</dt>
+              <dd className="mono tabular">{sets.length}</dd>
+            </div>
+            <div>
+              <dt className="label">Problems</dt>
+              <dd className="mono tabular">{totals.problems}</dd>
+            </div>
+            <div>
+              <dt className="label">Solved</dt>
+              <dd className="mono tabular">{totals.solved}</dd>
+            </div>
           </dl>
         )}
       </header>
 
       {sets && (
-        <div className={styles.toolbar} role="region" aria-label="Select, import and export sets">
+        <div
+          className={styles.toolbar}
+          role="region"
+          aria-label="Select, import and export sets"
+        >
           <div className={styles.selection}>
             {sets.length > 0 ? (
               <>
                 <Checkbox
                   checked={allSelected}
                   indeterminate={selectedCount > 0 && !allSelected}
-                  onChange={(on) => setSelected(on ? new Set(sets.map((s) => s.id)) : new Set())}
+                  onChange={(on) =>
+                    setSelected(on ? new Set(sets.map((s) => s.id)) : new Set())
+                  }
                   label="Select all"
                   showLabel
                 />
@@ -150,7 +201,9 @@ export function SetList() {
                 </button>
               </>
             ) : (
-              <span className={styles.count}>No sets yet — import a workbook or create a set.</span>
+              <span className={styles.count}>
+                No sets yet — import a workbook or create a set.
+              </span>
             )}
           </div>
 
@@ -171,7 +224,11 @@ export function SetList() {
               aria-busy={exportTarget === "selected" || undefined}
             >
               {busyIcon("selected")} Export selected
-              {selectedCount > 0 && <span className={`mono tabular ${styles.badge}`}>{selectedCount}</span>}
+              {selectedCount > 0 && (
+                <span className={`mono tabular ${styles.badge}`}>
+                  {selectedCount}
+                </span>
+              )}
             </button>
             <button
               type="button"
@@ -190,20 +247,33 @@ export function SetList() {
       )}
 
       {sets === null ? (
-        <ul className={styles.grid} aria-busy="true" aria-label="Loading problem sets">
+        <ul
+          className={styles.grid}
+          aria-busy="true"
+          aria-label="Loading problem sets"
+        >
           {[0, 1, 2].map((i) => (
             <li key={i} className={`${styles.card} ${styles.cardSkeleton}`}>
-              <span className={`skeleton ${styles.skLine}`} style={{ width: "40%" }} />
-              <span className={`skeleton ${styles.skLine}`} style={{ width: "75%", height: 22 }} />
-              <span className={`skeleton ${styles.skLine}`} style={{ width: "100%", height: 6 }} />
+              <span
+                className={`skeleton ${styles.skLine}`}
+                style={{ width: "40%" }}
+              />
+              <span
+                className={`skeleton ${styles.skLine}`}
+                style={{ width: "75%", height: 22 }}
+              />
+              <span
+                className={`skeleton ${styles.skLine}`}
+                style={{ width: "100%", height: 6 }}
+              />
             </li>
           ))}
         </ul>
-      ) : sets.length === 0 ? (
+      ) : sets?.length === 0 ? (
         <EmptyState />
       ) : (
         <ul className={styles.grid}>
-          {sets.map((s, i) => (
+          {sets?.map((s, i) => (
             <SetCard
               key={s.id}
               set={s}
@@ -231,13 +301,20 @@ export function SetList() {
           if (!pendingDelete) return;
           deleteSet(pendingDelete.id);
           toggle(pendingDelete.id, false);
-          setToast({ tone: "success", message: `Deleted “${pendingDelete.name}”` });
+          setToast({
+            tone: "success",
+            message: `Deleted “${pendingDelete.name}”`,
+          });
           setPendingDelete(null);
         }}
       >
         <p>
-          This permanently removes the set, its {pendingDelete ? plural(pendingDelete.problems.length, "problem") : "problems"},
-          solved statuses and recorded timings from this browser. Your other sets are not affected.
+          This permanently removes the set, its{" "}
+          {pendingDelete
+            ? plural(pendingDelete.problems.length, "problem")
+            : "problems"}
+          , solved statuses and recorded timings from this browser. Your other
+          sets are not affected.
         </p>
       </ConfirmDialog>
 
@@ -287,8 +364,13 @@ function SetCard({
 
   useEffect(() => {
     if (!scrollIntoView) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    ref.current?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    ref.current?.scrollIntoView({
+      block: "nearest",
+      behavior: reduce ? "auto" : "smooth",
+    });
   }, [scrollIntoView]);
 
   const sheet = getSheet(set.sheetId);
@@ -313,8 +395,14 @@ function SetCard({
     >
       <div className={styles.cardTop}>
         <span className={styles.select}>
-          <Checkbox checked={selected} onChange={onSelect} label={`Select ${set.name}`} />
-          <span className={`mono ${styles.index}`}>No. {String(index).padStart(3, "0")}</span>
+          <Checkbox
+            checked={selected}
+            onChange={onSelect}
+            label={`Select ${set.name}`}
+          />
+          <span className={`mono ${styles.index}`}>
+            No. {String(index).padStart(3, "0")}
+          </span>
         </span>
         <span className={styles.status}>
           <span className={styles.statusDot} aria-hidden="true" />
@@ -332,22 +420,40 @@ function SetCard({
         <div>
           <dt className="label">Source</dt>
           <dd>
-            <span className={`mono ${styles.code}`}>{sheet.shortName}</span> {sheet.name}
+            <span className={`mono ${styles.code}`}>{sheet.shortName}</span>{" "}
+            {sheet.name}
           </dd>
         </div>
         <div>
           <dt className="label">Created</dt>
           <dd>
-            <time dateTime={set.createdAt} title={formatDateTime(set.createdAt)}>{formatDate(set.createdAt)}</time>
+            <time
+              dateTime={set.createdAt}
+              title={formatDateTime(set.createdAt)}
+            >
+              {formatDate(set.createdAt)}
+            </time>
           </dd>
         </div>
       </dl>
 
       <dl className={styles.stats}>
-        <div><dt className="label">Total</dt><dd className="mono tabular">{stats.total}</dd></div>
-        <div><dt className="label">Solved</dt><dd className="mono tabular">{stats.solved}</dd></div>
-        <div><dt className="label">Left</dt><dd className="mono tabular">{stats.remaining}</dd></div>
-        <div><dt className="label">Done</dt><dd className="mono tabular">{stats.percent}%</dd></div>
+        <div>
+          <dt className="label">Total</dt>
+          <dd className="mono tabular">{stats.total}</dd>
+        </div>
+        <div>
+          <dt className="label">Solved</dt>
+          <dd className="mono tabular">{stats.solved}</dd>
+        </div>
+        <div>
+          <dt className="label">Left</dt>
+          <dd className="mono tabular">{stats.remaining}</dd>
+        </div>
+        <div>
+          <dt className="label">Done</dt>
+          <dd className="mono tabular">{stats.percent}%</dd>
+        </div>
       </dl>
 
       <div
@@ -358,12 +464,20 @@ function SetCard({
         aria-valuemax={100}
         aria-valuenow={stats.percent}
       >
-        <span className="progress__fill" style={{ width: `${stats.percent}%` }} />
+        <span
+          className="progress__fill"
+          style={{ width: `${stats.percent}%` }}
+        />
       </div>
 
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
-          <button type="button" className={`btn btn--sm btn--ghost ${styles.delete}`} onClick={onDelete} aria-label={`Delete ${set.name}`}>
+          <button
+            type="button"
+            className={`btn btn--sm btn--ghost ${styles.delete}`}
+            onClick={onDelete}
+            aria-label={`Delete ${set.name}`}
+          >
             <TrashIcon /> Delete
           </button>
           <button
@@ -374,11 +488,24 @@ function SetCard({
             aria-busy={exporting || undefined}
             aria-label={`Export ${set.name} to Excel`}
           >
-            {exporting ? <span className="spinner" aria-hidden="true" /> : <DownloadIcon />} Export
+            {exporting ? (
+              <span className="spinner" aria-hidden="true" />
+            ) : (
+              <DownloadIcon />
+            )}{" "}
+            Export
           </button>
         </div>
-        <Link href={`/sets/${set.id}`} className="btn btn--sm" tabIndex={-1} aria-hidden="true">
-          {stats.solved > 0 || set.session.status !== "idle" ? "Resume" : "Open"} <ArrowRightIcon />
+        <Link
+          href={`/sets/${set.id}`}
+          className="btn btn--sm"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          {stats.solved > 0 || set.session.status !== "idle"
+            ? "Resume"
+            : "Open"}{" "}
+          <ArrowRightIcon />
         </Link>
       </div>
     </li>
@@ -389,15 +516,35 @@ function EmptyState() {
   return (
     <section className={styles.empty} aria-labelledby="empty-title">
       <svg className={styles.emptyArt} viewBox="0 0 200 120" aria-hidden="true">
-        <rect x="20" y="16" width="160" height="88" fill="none" stroke="currentColor" strokeDasharray="4 4" />
+        <rect
+          x="20"
+          y="16"
+          width="160"
+          height="88"
+          fill="none"
+          stroke="currentColor"
+          strokeDasharray="4 4"
+        />
         <path d="M20 40h160M60 16v88" stroke="currentColor" opacity="0.4" />
         <path d="M100 52v36M82 70h36" stroke="var(--accent)" strokeWidth="2" />
         <path d="M12 16h4M12 104h4M14 16v88" stroke="var(--accent)" />
-        <text x="6" y="64" fontSize="8" fill="var(--accent)" fontFamily="var(--font-mono)" transform="rotate(-90 6 64)">0 sets</text>
+        <text
+          x="6"
+          y="64"
+          fontSize="8"
+          fill="var(--accent)"
+          fontFamily="var(--font-mono)"
+          transform="rotate(-90 6 64)"
+        >
+          0 sets
+        </text>
       </svg>
-      <h2 id="empty-title" className={styles.emptyTitle}>The drawing board is empty.</h2>
+      <h2 id="empty-title" className={styles.emptyTitle}>
+        The drawing board is empty.
+      </h2>
       <p className="muted">
-        Create your first problem set — choose a sheet, set the difficulty mix, and start the clock.
+        Create your first problem set — choose a sheet, set the difficulty mix,
+        and start the clock.
       </p>
       <Link href="/create" className="btn btn--primary btn--lg">
         Create your first set <ArrowRightIcon />

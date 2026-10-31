@@ -7,11 +7,11 @@ import type { CatalogProblem, ProblemSet } from "../src/lib/types";
 const MIN = 60_000;
 
 const catalog: CatalogProblem[] = [
-  { id: "h1", title: "H1", url: "u", difficulty: "hard", topic: "", order: 0 },
-  { id: "e1", title: "E1", url: "u", difficulty: "easy", topic: "", order: 1 },
-  { id: "m1", title: "M1", url: "u", difficulty: "medium", topic: "", order: 2 },
-  { id: "e2", title: "E2", url: "u", difficulty: "easy", topic: "", order: 3 },
-  { id: "m2", title: "M2", url: "u", difficulty: "medium", topic: "", order: 4 },
+  { id: "h1", title: "H1", url: "u", leetCodeUrl: null, difficulty: "hard", topic: "", order: 0 },
+  { id: "e1", title: "E1", url: "u", leetCodeUrl: null, difficulty: "easy", topic: "", order: 1 },
+  { id: "m1", title: "M1", url: "u", leetCodeUrl: null, difficulty: "medium", topic: "", order: 2 },
+  { id: "e2", title: "E2", url: "u", leetCodeUrl: null, difficulty: "easy", topic: "", order: 3 },
+  { id: "m2", title: "M2", url: "u", leetCodeUrl: null, difficulty: "medium", topic: "", order: 4 },
 ];
 
 function freshSet(): ProblemSet {

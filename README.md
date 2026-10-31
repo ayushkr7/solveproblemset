@@ -1,6 +1,6 @@
 # Blueprint DSA
 
-A client-side DSA / competitive-programming practice tracker. Build personalised problem sets from Striver's sheets, time every solve, and resume where you left off. Everything persists in `localStorage`.
+A client-side DSA / competitive-programming practice tracker. Build personalised problem sets from Striver's A2Z and 180 sheets, NeetCode's Blind 75, or live, quality-filtered pools from LeetCode (by difficulty) and Codeforces (by rating). Time every solve and resume where you left off. Sets persist in `localStorage`.
 
 ```bash
 npm install
@@ -15,6 +15,7 @@ npm run typecheck
 ```
 src/
   app/                    routes: / (landing), /create, /sets, /sets/[id]
+    api/sources/          GET /api/sources/leetcode, /api/sources/codeforces (server-side fetch + cache)
   components/             shared UI (header, theme toggle, confirm dialog, badges)
     ui/dialog.tsx         shadcn/ui Dialog on Radix: use it for every modal
     create/               problem-set form
@@ -22,15 +23,19 @@ src/
     set-detail/           timer panel, problems table, detail page
   data/
     sheets.ts             problem-source registry (add new sheets here)
-    catalog.ts            bundled problem catalog, lazy-loaded
+    a2zproblemset.ts      Striver A2Z problems (source of truth)
+    striver180problemset.ts  Striver 180 problems (source of truth)
+    neetcodeBlind75.ts    NeetCode Blind 75 problems (source of truth)
+    problems.ts           maps those files onto CatalogProblem
   hooks/                  useProblemSets / useProblemSet (external store), useNow
   lib/
     timer.ts              pure session/timing logic (fully unit-tested)
     problem-sets.ts       localStorage repository + subscribable store
-    generate.ts           validation, sampling, set construction
+    generate.ts           validation, sampling (by difficulty or rating), set construction
+    sources/              live sources: leetcode.ts, codeforces.ts (fetch + quality filter), cache.ts, serve.ts
     storage.ts, theme.ts, format.ts, types.ts
     excel/                .xlsx import/export (see below)
-tests/timer.test.ts, tests/excel.test.ts
+tests/                    timer, excel, sources (bundled sheets), live-sources
 ```
 
 ## Timing model
@@ -51,7 +56,7 @@ On My Sets you can select sets and export them (**Export selected**, **Export al
 
 Format version 2 has two worksheets, linked by `SetID`:
 - `ProblemSets`: one row per set, with `SetID`, `SetName`, `SourceSheet` and `CreatedAt`, plus optional `ElapsedSeconds`, `TimerState` and `FormatVersion`.
-- `Problems`: one row per problem, with `SetID`, `ProblemName`, `ProblemURL`, `Difficulty`, `Status`, `TimeMinutes` and `Order`, plus an optional `Topic`.
+- `Problems`: one row per problem, with `SetID`, `ProblemName`, `ProblemURL`, `Difficulty`, `Status`, `TimeMinutes` and `Order`, plus optional `LeetCodeURL`, `Topic` and `Rating` (Codeforces).
 
 Single-set files in format 1 (`ProblemSet` / `Problems` / `Session` worksheets) can still be imported.
 
@@ -62,4 +67,22 @@ Single-set files in format 1 (`ProblemSet` / `Problems` / `Session` worksheets) 
 
 ## Problem data
 
-Striver's sheets have no public API. `data/catalog.ts` is a curated, bundled subset (A2Z: 288 problems, 180: 151), with LeetCode, GFG and SPOJ links. It loads through an async provider (`fetchSheetProblems`), so a remote source can replace it without UI changes.
+None of the sheets has a public API, so each is bundled as its own file in `data/`. Those three files are the source of truth: Striver A2Z (431 problems), Striver 180 (179) and NeetCode Blind 75 (75). Each problem links to the sheet's own practice page (takeUforward or NeetCode) and, where there is one, to LeetCode. `data/problems.ts` maps the rows onto `CatalogProblem`. Problem ids are slugs from the problem links (the takeUforward slug for Striver, the LeetCode slug for Blind 75), so they stay stable if a sheet is reordered.
+
+Each sheet loads lazily through `fetchSheetProblems`, so a remote source could replace a file without UI changes. To update a sheet, edit its file; to add one, follow the comment at the top of `data/sheets.ts`.
+
+## Live sources
+
+LeetCode and Codeforces are fetched by this app's server, never by the browser, and filtered down to problems worth practising. Each route caches its list in memory: once the list is stale it keeps serving the last good copy while a single refresh runs, and a failed refresh never takes the list away. Responses are gzipped (the Codeforces list is about 1.1 MB as JSON and about 140 KB on the wire).
+
+| | Codeforces | LeetCode |
+|---|---|---|
+| Upstream | Official API: `problemset.problems` and `contest.list` (2 calls, spaced for its 1-call-per-2-s limit) | The GraphQL problem list its own site uses (unofficial; about 37 pages of 100) |
+| Refresh | Every 6 h | Every 24 h |
+| Quality filter | Rated problems from regular rated rounds held since 2016 (no April Fools, Kotlin Heroes, unrated mirrors…), without the least-solved quarter at each rating | Free Algorithms problems with 500+ likes and at least 80% positive votes |
+| Pool (Oct 2026) | about 5,500 problems across 800–3500 | about 1,670 (397 E / 904 M / 372 H) |
+| Picked by | Rating range and count, spread evenly across the ratings in the range | Easy / Medium / Hard counts |
+
+The thresholds are constants at the top of `lib/sources/codeforces.ts` and `lib/sources/leetcode.ts`. Codeforces ratings map to tiers as below 1200 = Easy, below 1800 = Medium, and the rest Hard, and each problem keeps its exact rating.
+
+LeetCode has no supported public API, and its robots.txt disallows `/graphql` for crawlers. The endpoint can change without notice, and LeetCode's terms apply, so check them before running this on a public deployment. The once-a-day cache keeps traffic to about 37 requests a day per server process.

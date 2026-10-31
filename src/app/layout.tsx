@@ -18,7 +18,7 @@ const instrument = Instrument_Serif({
 export const metadata: Metadata = {
   title: { default: "Blueprint DSA — practice, measured", template: "%s · Blueprint DSA" },
   description:
-    "Build personalised DSA practice sets from Striver's sheets, time every problem, and pick up exactly where you left off.",
+    "Build personalised DSA practice sets from Striver's sheets, NeetCode's Blind 75, LeetCode and Codeforces, time every problem, and pick up exactly where you left off.",
 };
 
 export const viewport: Viewport = {

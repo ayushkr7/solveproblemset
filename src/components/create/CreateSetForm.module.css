@@ -33,7 +33,7 @@
 
 /* Sheet radio cards */
 .sheets { display: grid; gap: 12px; }
-@media (min-width: 640px) { .sheets { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 640px) { .sheets { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); } }
 
 .sheet {
   position: relative;
@@ -75,6 +75,17 @@
   width: 10px; height: 10px;
   border-radius: 50%;
   background: var(--accent);
+}
+.sheetTags { display: flex; align-items: center; gap: 8px; }
+.liveTag { color: var(--ink-2); }
+.liveTag::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 1px;
 }
 .sheetName { font-weight: 600; font-size: 1.0625rem; letter-spacing: -0.01em; }
 .sheetDesc { font-size: 0.875rem; color: var(--ink-2); }
@@ -163,6 +174,23 @@
 .countInput::-webkit-outer-spin-button,
 .countInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .countInput:focus { outline: none; background: var(--accent-soft); }
+
+/* Rating range (Codeforces): same cards as the difficulty counts, in the accent colour. */
+.countRated { --diff-fg: var(--accent); }
+.ratingSelect {
+  width: 100%;
+  height: 50px;
+  padding-inline: 14px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+  background: var(--surface);
+  font-size: 1.375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ratingSelect:focus { outline: none; border-color: var(--accent); background: var(--accent-soft); }
+.ratingSelect[aria-invalid="true"] { border-color: var(--danger); }
+.presets :global(.btn[aria-pressed="true"]) { --btn-border: var(--accent); --btn-bg: var(--accent-soft); }
 
 .avail { min-height: 1.2em; }
 .availSkeleton { display: inline-block; width: 96px; height: 10px; vertical-align: middle; }

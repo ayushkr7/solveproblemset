@@ -15,8 +15,8 @@ export default function CreatePage() {
           Draft a <span className="serif-accent">practice set.</span>
         </h1>
         <p className="page-head__lede">
-          Name it, choose a sheet, set the difficulty mix. Problems are drawn at random from the sheet and ordered Easy
-          → Medium → Hard.
+          Name it, choose a source, then set the difficulty mix, or a rating range for Codeforces. Problems are drawn at
+          random and ordered Easy → Medium → Hard.
         </p>
       </header>
       <CreateSetForm />

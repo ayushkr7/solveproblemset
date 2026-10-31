@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import { DifficultyTicks } from "@/components/DifficultyBadge";
 import { AlertIcon, ArrowRightIcon, MinusIcon, PlusIcon } from "@/components/Icons";
 import { SHEETS, fetchSheetProblems } from "@/data/sheets";
@@ -9,14 +9,22 @@ import { useProblemSets } from "@/hooks/useProblemSets";
 import {
   NAME_MAX,
   PER_DIFFICULTY_MAX,
+  RATED_COUNT_MAX,
   buildProblemSet,
   countByDifficulty,
+  inRatingRange,
+  pickByRating,
   pickProblems,
+  ratingRange,
+  usedProblemMatcher,
   validateCounts,
   validateInput,
+  validateRatedInput,
+  validateRating,
   type FieldErrors,
 } from "@/lib/generate";
 import { saveSet } from "@/lib/problem-sets";
+import { CF_RATINGS } from "@/lib/sources/codeforces";
 import { DIFFICULTIES, DIFFICULTY_LABEL, type CatalogProblem, type Difficulty, type DifficultyCounts, type SheetId } from "@/lib/types";
 import styles from "./CreateSetForm.module.css";
 
@@ -33,6 +41,13 @@ const PRESETS: { label: string; counts: DifficultyCounts }[] = [
   { label: "Gauntlet", counts: { easy: 0, medium: 3, hard: 4 } },
 ];
 
+const RATING_PRESETS: { label: string; min: number; max: number }[] = [
+  { label: "Div. 2 A–B", min: 800, max: 1200 },
+  { label: "Div. 2 B–C", min: 1200, max: 1600 },
+  { label: "Div. 2 C–D", min: 1600, max: 2000 },
+  { label: "Div. 1", min: 2000, max: 2600 },
+];
+
 function toCount(raw: string): number {
   const t = raw.trim();
   return t === "" ? 0 : Number(t);
@@ -45,6 +60,9 @@ export function CreateSetForm() {
   const [name, setName] = useState("");
   const [sheetId, setSheetId] = useState<SheetId | null>(null);
   const [rawCounts, setRawCounts] = useState<Record<Difficulty, string>>({ easy: "2", medium: "3", hard: "1" });
+  const [ratingMin, setRatingMin] = useState(800);
+  const [ratingMax, setRatingMax] = useState(1200);
+  const [rawRatedCount, setRawRatedCount] = useState("6");
   const [avoidUsed, setAvoidUsed] = useState(false);
   const [catalog, setCatalog] = useState<Catalog>({ status: "idle" });
   const [attempted, setAttempted] = useState(false);
@@ -61,7 +79,13 @@ export function CreateSetForm() {
     medium: toCount(rawCounts.medium),
     hard: toCount(rawCounts.hard),
   };
-  const total = DIFFICULTIES.reduce((s, d) => s + (Number.isFinite(counts[d]) ? counts[d] : 0), 0);
+  const ratedCount = toCount(rawRatedCount);
+  const rated = { min: ratingMin, max: ratingMax, count: ratedCount };
+  const sheet = SHEETS.find((s) => s.id === sheetId);
+  const byRating = sheet?.selectBy === "rating";
+  const total = byRating
+    ? Number.isFinite(ratedCount) ? ratedCount : 0
+    : DIFFICULTIES.reduce((s, d) => s + (Number.isFinite(counts[d]) ? counts[d] : 0), 0);
 
   // Load the selected sheet so availability can be shown and validated up front.
   useEffect(() => {
@@ -79,23 +103,29 @@ export function CreateSetForm() {
     };
   }, [sheetId, reloadKey]);
 
-  const usedIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (sheetId && existingSets) {
-      for (const s of existingSets) if (s.sheetId === sheetId) for (const p of s.problems) ids.add(p.id);
-    }
-    return ids;
-  }, [existingSets, sheetId]);
+  const otherSets = useMemo(
+    () => (sheetId && existingSets ? existingSets.filter((s) => s.sheetId === sheetId) : []),
+    [existingSets, sheetId],
+  );
+  const isUsed = useMemo(() => usedProblemMatcher(otherSets.flatMap((s) => s.problems)), [otherSets]);
+  const usedCount = catalog.status === "ready" ? catalog.problems.filter(isUsed).length : null;
 
   const pool = useMemo(() => {
     if (catalog.status !== "ready") return null;
-    return avoidUsed ? catalog.problems.filter((p) => !usedIds.has(p.id)) : catalog.problems;
-  }, [catalog, avoidUsed, usedIds]);
+    return avoidUsed ? catalog.problems.filter((p) => !isUsed(p)) : catalog.problems;
+  }, [catalog, avoidUsed, isUsed]);
 
   const available = pool ? countByDifficulty(pool) : undefined;
-  const errors: FieldErrors = attempted ? validateInput({ name, sheetId, counts }, available) : {};
+  const ratedAvailable = pool ? pool.filter((p) => inRatingRange(p, ratingMin, ratingMax)).length : undefined;
+  const validate = (): FieldErrors =>
+    byRating ? validateRatedInput({ name, sheetId, ...rated }, ratedAvailable) : validateInput({ name, sheetId, counts }, available);
+  const errors: FieldErrors = attempted ? validate() : {};
   // Count problems (e.g. more than the sheet has) are flagged immediately, not only after submit.
-  const liveErrors: FieldErrors = attempted ? errors : validateCounts(counts, available);
+  const liveErrors: FieldErrors = attempted
+    ? errors
+    : byRating
+      ? validateRating(rated, ratedAvailable)
+      : validateCounts(counts, available);
 
   const setCount = (d: Difficulty, value: string) => {
     setRawCounts((c) => ({ ...c, [d]: value }));
@@ -111,20 +141,20 @@ export function CreateSetForm() {
     e.preventDefault();
     setAttempted(true);
     setSubmitError(null);
-    const found = validateInput({ name, sheetId, counts }, available);
+    const found = validate();
     if (Object.keys(found).length > 0 || !sheetId) {
       if (found.name) nameRef.current?.focus();
       else if (found.sheetId) sheetRef.current?.querySelector("input")?.focus();
-      else countsRef.current?.querySelector<HTMLInputElement>("input[aria-invalid='true'], input")?.focus();
+      else countsRef.current?.querySelector<HTMLElement>("[aria-invalid='true'], input, select")?.focus();
       return;
     }
 
     setSubmitting(true);
     try {
       const problems = await fetchSheetProblems(sheetId);
-      const candidates = avoidUsed ? problems.filter((p) => !usedIds.has(p.id)) : problems;
-      const picked = pickProblems(candidates, counts);
-      const set = buildProblemSet({ name, sheetId, counts }, picked);
+      const candidates = avoidUsed ? problems.filter((p) => !isUsed(p)) : problems;
+      const picked = byRating ? pickByRating(candidates, rated) : pickProblems(candidates, counts);
+      const set = buildProblemSet({ name, sheetId, counts: byRating ? countByDifficulty(picked) : counts }, picked);
       saveSet(set);
       router.push(`/sets/${set.id}`);
     } catch (err) {
@@ -133,8 +163,7 @@ export function CreateSetForm() {
     }
   }
 
-  const sheet = SHEETS.find((s) => s.id === sheetId);
-  const hasOtherSetsForSheet = usedIds.size > 0;
+  const hasOtherSetsForSheet = otherSets.length > 0;
 
   return (
     <form className={styles.layout} onSubmit={onSubmit} noValidate aria-busy={submitting}>
@@ -188,7 +217,10 @@ export function CreateSetForm() {
                     className={styles.sheetRadio}
                   />
                   <span className={styles.sheetTop}>
-                    <span className={`mono ${styles.sheetCode}`}>{s.shortName}</span>
+                    <span className={styles.sheetTags}>
+                      <span className={`mono ${styles.sheetCode}`}>{s.shortName}</span>
+                      {s.kind === "live" && <span className={`label ${styles.liveTag}`}>Live</span>}
+                    </span>
                     <span className={styles.radioDot} aria-hidden="true" />
                   </span>
                   <span className={styles.sheetName}>{s.name}</span>
@@ -216,7 +248,9 @@ export function CreateSetForm() {
               <input type="checkbox" checked={avoidUsed} onChange={(e) => setAvoidUsed(e.target.checked)} />
               <span>
                 <strong>Only new problems</strong>
-                <span className="field__hint"> — skip the {usedIds.size} problems already in your other {sheet?.shortName} sets.</span>
+                <span className="field__hint">
+                  {" "}— skip the {usedCount === null ? "" : `${usedCount} `}problems already in your other {sheet?.shortName} sets.
+                </span>
               </span>
             </label>
           )}
@@ -224,88 +258,112 @@ export function CreateSetForm() {
 
         {/* 03 — Difficulty mix */}
         <section className={styles.section} aria-labelledby="sec-mix">
-          <SectionLabel n="03" id="sec-mix" title="Set the difficulty mix" />
-          <div className={styles.presets} role="group" aria-label="Presets">
-            {PRESETS.map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                className="btn btn--sm"
-                onClick={() => {
-                  setRawCounts({ easy: String(p.counts.easy), medium: String(p.counts.medium), hard: String(p.counts.hard) });
-                  setSubmitError(null);
-                }}
-              >
-                {p.label}
-                <span className={`mono ${styles.presetSpec}`}>
-                  {p.counts.easy}/{p.counts.medium}/{p.counts.hard}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <fieldset ref={countsRef} className={styles.fieldset} aria-describedby="counts-error">
-            <legend className="visually-hidden">Number of problems per difficulty</legend>
-            <div className={styles.counts}>
-              {DIFFICULTIES.map((d) => {
-                const err = liveErrors[d];
-                const inputId = `count-${d}`;
-                return (
-                  <div key={d} className={`${styles.count} diff--${d}`} data-invalid={err ? "" : undefined}>
-                    <label htmlFor={inputId} className={styles.countLabel}>
-                      <DifficultyTicks difficulty={d} />
-                      {DIFFICULTY_LABEL[d]}
-                    </label>
-                    <div className={styles.stepper}>
-                      <button
-                        type="button"
-                        className={styles.stepBtn}
-                        onClick={() => step(d, -1)}
-                        aria-label={`Fewer ${DIFFICULTY_LABEL[d].toLowerCase()} problems`}
-                        disabled={!(counts[d] > 0)}
-                      >
-                        <MinusIcon />
-                      </button>
-                      <input
-                        id={inputId}
-                        className={`mono tabular ${styles.countInput}`}
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        max={PER_DIFFICULTY_MAX}
-                        step={1}
-                        value={rawCounts[d]}
-                        aria-invalid={err ? true : undefined}
-                        aria-describedby={`${inputId}-avail ${inputId}-error`}
-                        onChange={(e) => setCount(d, e.target.value)}
-                        onFocus={(e) => e.currentTarget.select()}
-                      />
-                      <button
-                        type="button"
-                        className={styles.stepBtn}
-                        onClick={() => step(d, 1)}
-                        aria-label={`More ${DIFFICULTY_LABEL[d].toLowerCase()} problems`}
-                        disabled={available ? counts[d] >= available[d] : counts[d] >= PER_DIFFICULTY_MAX}
-                      >
-                        <PlusIcon />
-                      </button>
-                    </div>
-                    <span id={`${inputId}-avail`} className={`label ${styles.avail}`}>
-                      {catalog.status === "loading" ? (
-                        <span className={`skeleton ${styles.availSkeleton}`} aria-label="Loading availability" />
-                      ) : available ? (
-                        <>of {available[d]} available</>
-                      ) : (
-                        <>pick a source</>
-                      )}
+          <SectionLabel n="03" id="sec-mix" title={byRating ? "Set the rating range" : "Set the difficulty mix"} />
+          {byRating ? (
+            <RatingFields
+              fieldsetRef={countsRef}
+              min={ratingMin}
+              max={ratingMax}
+              rawCount={rawRatedCount}
+              count={ratedCount}
+              available={ratedAvailable}
+              loading={catalog.status === "loading"}
+              errors={liveErrors}
+              onRange={(min, max) => {
+                setRatingMin(min);
+                setRatingMax(max);
+                setSubmitError(null);
+              }}
+              onCount={(v) => {
+                setRawRatedCount(v);
+                setSubmitError(null);
+              }}
+            />
+          ) : (
+            <>
+              <div className={styles.presets} role="group" aria-label="Presets">
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    className="btn btn--sm"
+                    onClick={() => {
+                      setRawCounts({ easy: String(p.counts.easy), medium: String(p.counts.medium), hard: String(p.counts.hard) });
+                      setSubmitError(null);
+                    }}
+                  >
+                    {p.label}
+                    <span className={`mono ${styles.presetSpec}`}>
+                      {p.counts.easy}/{p.counts.medium}/{p.counts.hard}
                     </span>
-                    <FieldError id={`${inputId}-error`} message={err} />
-                  </div>
-                );
-              })}
-            </div>
-          </fieldset>
-          <FieldError id="counts-error" message={errors.counts} />
+                  </button>
+                ))}
+              </div>
+
+              <fieldset ref={countsRef} className={styles.fieldset} aria-describedby="counts-error">
+                <legend className="visually-hidden">Number of problems per difficulty</legend>
+                <div className={styles.counts}>
+                  {DIFFICULTIES.map((d) => {
+                    const err = liveErrors[d];
+                    const inputId = `count-${d}`;
+                    return (
+                      <div key={d} className={`${styles.count} diff--${d}`} data-invalid={err ? "" : undefined}>
+                        <label htmlFor={inputId} className={styles.countLabel}>
+                          <DifficultyTicks difficulty={d} />
+                          {DIFFICULTY_LABEL[d]}
+                        </label>
+                        <div className={styles.stepper}>
+                          <button
+                            type="button"
+                            className={styles.stepBtn}
+                            onClick={() => step(d, -1)}
+                            aria-label={`Fewer ${DIFFICULTY_LABEL[d].toLowerCase()} problems`}
+                            disabled={!(counts[d] > 0)}
+                          >
+                            <MinusIcon />
+                          </button>
+                          <input
+                            id={inputId}
+                            className={`mono tabular ${styles.countInput}`}
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={PER_DIFFICULTY_MAX}
+                            step={1}
+                            value={rawCounts[d]}
+                            aria-invalid={err ? true : undefined}
+                            aria-describedby={`${inputId}-avail ${inputId}-error`}
+                            onChange={(e) => setCount(d, e.target.value)}
+                            onFocus={(e) => e.currentTarget.select()}
+                          />
+                          <button
+                            type="button"
+                            className={styles.stepBtn}
+                            onClick={() => step(d, 1)}
+                            aria-label={`More ${DIFFICULTY_LABEL[d].toLowerCase()} problems`}
+                            disabled={available ? counts[d] >= available[d] : counts[d] >= PER_DIFFICULTY_MAX}
+                          >
+                            <PlusIcon />
+                          </button>
+                        </div>
+                        <span id={`${inputId}-avail`} className={`label ${styles.avail}`}>
+                          {catalog.status === "loading" ? (
+                            <span className={`skeleton ${styles.availSkeleton}`} aria-label="Loading availability" />
+                          ) : available ? (
+                            <>of {available[d]} available</>
+                          ) : (
+                            <>pick a source</>
+                          )}
+                        </span>
+                        <FieldError id={`${inputId}-error`} message={err} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </fieldset>
+              <FieldError id="counts-error" message={errors.counts} />
+            </>
+          )}
         </section>
       </div>
 
@@ -326,9 +384,13 @@ export function CreateSetForm() {
               <dd className={sheet ? undefined : styles.placeholder}>{sheet?.name ?? "Not selected"}</dd>
             </div>
             <div className={styles.specMix}>
-              <dt className="label">Mix</dt>
+              <dt className="label">{byRating ? "Rating" : "Mix"}</dt>
               <dd>
-                <MixBar counts={counts} total={total} />
+                {byRating ? (
+                  <span className="mono tabular">{ratingRange(ratingMin, ratingMax)}</span>
+                ) : (
+                  <MixBar counts={counts} total={total} />
+                )}
               </dd>
             </div>
             <div>
@@ -364,6 +426,128 @@ export function CreateSetForm() {
         {submitting ? "Fetching problems and creating your set." : ""}
       </p>
     </form>
+  );
+}
+
+function RatingFields({
+  fieldsetRef,
+  min,
+  max,
+  rawCount,
+  count,
+  available,
+  loading,
+  errors,
+  onRange,
+  onCount,
+}: {
+  fieldsetRef: RefObject<HTMLFieldSetElement | null>;
+  min: number;
+  max: number;
+  rawCount: string;
+  count: number;
+  available: number | undefined;
+  loading: boolean;
+  errors: FieldErrors;
+  onRange: (min: number, max: number) => void;
+  onCount: (raw: string) => void;
+}) {
+  const current = Number.isFinite(count) ? Math.trunc(count) : 0;
+  const cap = Math.min(RATED_COUNT_MAX, available ?? RATED_COUNT_MAX);
+  const step = (delta: number) => onCount(String(Math.max(1, Math.min(cap, current + delta))));
+  // Moving one end past the other drags the other end along, so the range is never empty.
+  const ends = [
+    { id: "rating-min", label: "Lowest", value: min, set: (v: number) => onRange(v, Math.max(v, max)) },
+    { id: "rating-max", label: "Highest", value: max, set: (v: number) => onRange(Math.min(min, v), v) },
+  ];
+
+  return (
+    <>
+      <div className={styles.presets} role="group" aria-label="Rating presets">
+        {RATING_PRESETS.map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            className="btn btn--sm"
+            aria-pressed={min === p.min && max === p.max}
+            onClick={() => onRange(p.min, p.max)}
+          >
+            {p.label}
+            <span className={`mono ${styles.presetSpec}`}>
+              {p.min}–{p.max}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <fieldset ref={fieldsetRef} className={styles.fieldset} aria-describedby="rating-hint rating-error">
+        <legend className="visually-hidden">Rating range and number of problems</legend>
+        <div className={styles.counts}>
+          {ends.map((e) => (
+            <div key={e.id} className={`${styles.count} ${styles.countRated}`} data-invalid={errors.rating ? "" : undefined}>
+              <label htmlFor={e.id} className={styles.countLabel}>
+                {e.label} rating
+              </label>
+              <select
+                id={e.id}
+                className={`mono tabular ${styles.ratingSelect}`}
+                value={e.value}
+                aria-invalid={errors.rating ? true : undefined}
+                onChange={(ev) => e.set(Number(ev.target.value))}
+              >
+                {CF_RATINGS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+
+          <div className={`${styles.count} ${styles.countRated}`} data-invalid={errors.count ? "" : undefined}>
+            <label htmlFor="rated-count" className={styles.countLabel}>
+              Problems
+            </label>
+            <div className={styles.stepper}>
+              <button type="button" className={styles.stepBtn} onClick={() => step(-1)} aria-label="Fewer problems" disabled={current <= 1}>
+                <MinusIcon />
+              </button>
+              <input
+                id="rated-count"
+                className={`mono tabular ${styles.countInput}`}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={RATED_COUNT_MAX}
+                step={1}
+                value={rawCount}
+                aria-invalid={errors.count ? true : undefined}
+                aria-describedby="rated-count-avail rated-count-error"
+                onChange={(ev) => onCount(ev.target.value)}
+                onFocus={(ev) => ev.currentTarget.select()}
+              />
+              <button type="button" className={styles.stepBtn} onClick={() => step(1)} aria-label="More problems" disabled={current >= cap}>
+                <PlusIcon />
+              </button>
+            </div>
+            <span id="rated-count-avail" className={`label ${styles.avail}`}>
+              {loading ? (
+                <span className={`skeleton ${styles.availSkeleton}`} aria-label="Loading availability" />
+              ) : available !== undefined ? (
+                <>of {available} available</>
+              ) : (
+                <>pick a source</>
+              )}
+            </span>
+            <FieldError id="rated-count-error" message={errors.count} />
+          </div>
+        </div>
+      </fieldset>
+      <p id="rating-hint" className="field__hint">
+        Problems are spread evenly across the ratings from {ratingRange(min, max)}, lowest first.
+      </p>
+      <FieldError id="rating-error" message={errors.rating} />
+    </>
   );
 }
 

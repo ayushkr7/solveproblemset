@@ -56,12 +56,14 @@ export function buildWorkbook(sets: readonly ProblemSet[], now: number): Workboo
       setId: refs[i]!,
       title: p.title,
       url: { text: p.url, href: p.url },
+      leetCodeUrl: p.leetCodeUrl ? { text: p.leetCodeUrl, href: p.leetCodeUrl } : null,
       difficulty: DIFFICULTY_VALUE[p.difficulty],
       status: p.solved ? STATUS_VALUE.solved : STATUS_VALUE.unsolved,
       // Unrounded so a re-import restores the exact duration; numFmt rounds the display.
       minutes: p.solved && p.timeMs !== null ? p.timeMs / 60_000 : 0,
       order: j + 1,
       topic: p.topic || null,
+      rating: p.rating,
     })),
   );
 

@@ -34,3 +34,23 @@ export function formatDateTime(iso: string): string {
 export function plural(n: number, word: string, pluralWord = `${word}s`): string {
   return `${n} ${n === 1 ? word : pluralWord}`;
 }
+
+const SITES: [host: string, name: string][] = [
+  ["takeuforward.org", "takeUforward"],
+  ["neetcode.io", "NeetCode"],
+  ["leetcode.com", "LeetCode"],
+  ["geeksforgeeks.org", "GeeksforGeeks"],
+  ["spoj.com", "SPOJ"],
+  ["codeforces.com", "Codeforces"],
+];
+
+/** "https://takeuforward.org/practice/…" → "takeUforward"; unknown hosts give the hostname. */
+export function linkSite(url: string): string {
+  let host: string;
+  try {
+    host = new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "external site";
+  }
+  return SITES.find(([h]) => host === h || host.endsWith(`.${h}`))?.[1] ?? host;
+}

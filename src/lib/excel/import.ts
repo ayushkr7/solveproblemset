@@ -33,6 +33,7 @@ import {
   STATUS_VALUE,
   TIMER_STATE_VALUES,
   TIME_MINUTES_MAX,
+  RATING_MAX,
   TOPIC_MAX,
   V1_PROBLEMS_SHEET,
   V1_SESSION_SHEET,
@@ -397,6 +398,14 @@ function parseProblem(rec: Rec<ProblemKey>, errors: string[]): ProblemFields | n
     );
   }
 
+  const leetCodeCell = rec.get("leetCodeUrl");
+  const leetCodeUrl = isBlank(leetCodeCell) ? null : cellUrl(leetCodeCell);
+  if (!isBlank(leetCodeCell) && !leetCodeUrl) {
+    errors.push(
+      `${rec.at("leetCodeUrl")}: LeetCodeURL ${show(leetCodeCell)} isn't a valid web address. Use a full link starting with https://, or leave it blank.`,
+    );
+  }
+
   const diffCell = rec.get("difficulty");
   const difficulty = lookup<Difficulty>(diffCell, DIFFICULTY_VALUE);
   if (!difficulty) {
@@ -434,6 +443,12 @@ function parseProblem(rec: Rec<ProblemKey>, errors: string[]): ProblemFields | n
   if (topic === null) errors.push(`${rec.at("topic")}: Topic must be text, not ${show(topicCell)}.`);
   else if (topic.length > TOPIC_MAX) errors.push(`${rec.at("topic")}: Topic is longer than ${TOPIC_MAX} characters.`);
 
+  const ratingCell = rec.get("rating");
+  const rating = cellNumber(ratingCell);
+  if (rating !== "blank" && (rating === "invalid" || !Number.isSafeInteger(rating) || rating < 1 || rating > RATING_MAX)) {
+    errors.push(`${rec.at("rating")}: Rating ${show(ratingCell)} must be a whole number from 1 to ${RATING_MAX}, or blank.`);
+  }
+
   if (errors.length > before) return null;
   const solved = status === "solved";
   const ms = Math.round((minutes as number) * 60_000);
@@ -443,9 +458,11 @@ function parseProblem(rec: Rec<ProblemKey>, errors: string[]): ProblemFields | n
       id: createId(),
       title: title!,
       url: url!,
+      leetCodeUrl,
       difficulty: difficulty!,
       topic: topic ?? "",
       order: order as number,
+      rating: rating === "blank" ? null : (rating as number),
       solved,
       // 0 means "no time recorded" in the file → the app's "untimed".
       timeMs: solved && ms > 0 ? ms : null,

@@ -2,10 +2,20 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
-import { CheckIcon, CloseIcon, ExternalIcon, PencilIcon } from "@/components/Icons";
-import { formatMinSec, formatMinutes } from "@/lib/format";
+import {
+  CheckIcon,
+  CloseIcon,
+  ExternalIcon,
+  PencilIcon,
+} from "@/components/Icons";
+import { formatMinSec, formatMinutes, linkSite } from "@/lib/format";
 import { compareProblems } from "@/lib/generate";
-import { DIFFICULTIES, DIFFICULTY_LABEL, type ProblemSet, type SetProblem } from "@/lib/types";
+import {
+  DIFFICULTIES,
+  DIFFICULTY_LABEL,
+  type ProblemSet,
+  type SetProblem,
+} from "@/lib/types";
 import styles from "./ProblemTable.module.css";
 
 interface ProblemTableProps {
@@ -16,9 +26,10 @@ interface ProblemTableProps {
 
 export function ProblemTable({ set, onToggle, onEditTime }: ProblemTableProps) {
   const sorted = [...set.problems].sort(compareProblems);
-  const groups = DIFFICULTIES.map((d) => ({ d, rows: sorted.filter((p) => p.difficulty === d) })).filter(
-    (g) => g.rows.length > 0,
-  );
+  const groups = DIFFICULTIES.map((d) => ({
+    d,
+    rows: sorted.filter((p) => p.difficulty === d),
+  })).filter((g) => g.rows.length > 0);
   let serial = 0;
 
   return (
@@ -29,11 +40,21 @@ export function ProblemTable({ set, onToggle, onEditTime }: ProblemTableProps) {
         </caption>
         <thead>
           <tr>
-            <th scope="col" className={styles.colNo}>S. No.</th>
-            <th scope="col" className={styles.colTitle}>Problem</th>
-            <th scope="col" className={styles.colDiff}>Difficulty</th>
-            <th scope="col" className={styles.colStatus}>Status</th>
-            <th scope="col" className={styles.colTime}>Time <span className={styles.unit}>(min)</span></th>
+            <th scope="col" className={styles.colNo}>
+              S. No.
+            </th>
+            <th scope="col" className={styles.colTitle}>
+              Problem
+            </th>
+            <th scope="col" className={styles.colDiff}>
+              Difficulty
+            </th>
+            <th scope="col" className={styles.colStatus}>
+              Status
+            </th>
+            <th scope="col" className={styles.colTime}>
+              Time <span className={styles.unit}>(min)</span>
+            </th>
           </tr>
         </thead>
         {groups.map(({ d, rows }) => (
@@ -48,7 +69,15 @@ export function ProblemTable({ set, onToggle, onEditTime }: ProblemTableProps) {
             </tr>
             {rows.map((p) => {
               serial++;
-              return <ProblemRow key={p.id} problem={p} serial={serial} onToggle={onToggle} onEditTime={onEditTime} />;
+              return (
+                <ProblemRow
+                  key={p.id}
+                  problem={p}
+                  serial={serial}
+                  onToggle={onToggle}
+                  onEditTime={onEditTime}
+                />
+              );
             })}
           </tbody>
         ))}
@@ -69,19 +98,61 @@ function ProblemRow({
   onEditTime: ProblemTableProps["onEditTime"];
 }) {
   const checkId = `solved-${p.id}`;
+  const site = linkSite(p.url);
+  // Older sets linked the title straight to LeetCode; don't show the same link twice.
+  const leetCode =
+    p.leetCodeUrl && p.leetCodeUrl !== p.url ? p.leetCodeUrl : null;
+  const hideTopics = true;
   return (
     <tr className={styles.row} data-solved={p.solved || undefined}>
-      <td className={`mono tabular ${styles.no}`}>{String(serial).padStart(2, "0")}</td>
+      <td className={`mono tabular ${styles.no}`}>
+        {String(serial).padStart(2, "0")}
+      </td>
       <td className={styles.title}>
-        <a href={p.url} target="_blank" rel="noopener noreferrer" className={styles.link}>
+        <a
+          href={p.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.link}
+          title={`Open on ${site}`}
+        >
           {p.title}
           <ExternalIcon className={styles.ext} />
-          <span className="visually-hidden"> (opens in a new tab)</span>
+          <span className="visually-hidden"> ({site}, opens in a new tab)</span>
         </a>
-        {p.topic && <span className={styles.topic}>{p.topic}</span>}
+        {(p.topic || leetCode) && (
+          <span className={styles.meta}>
+            {p.topic && !hideTopics && (
+              <span className={styles.topic}>{p.topic}</span>
+            )}
+            {leetCode && (
+              <a
+                href={leetCode}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.alt}
+              >
+                LeetCode
+                <ExternalIcon />
+                <span className="visually-hidden">
+                  : {p.title} (opens in a new tab)
+                </span>
+              </a>
+            )}
+          </span>
+        )}
       </td>
       <td className={styles.diff}>
         <DifficultyBadge difficulty={p.difficulty} />
+        {p.rating !== null && (
+          <span
+            className={`mono tabular ${styles.rating}`}
+            title="Codeforces rating"
+          >
+            <span className="visually-hidden">rated </span>
+            {p.rating}
+          </span>
+        )}
       </td>
       <td className={styles.status}>
         <label htmlFor={checkId} className={styles.checkHit}>
@@ -105,7 +176,13 @@ function ProblemRow({
   );
 }
 
-function TimeCell({ problem: p, onSave }: { problem: SetProblem; onSave: (minutes: number) => void }) {
+function TimeCell({
+  problem: p,
+  onSave,
+}: {
+  problem: SetProblem;
+  onSave: (minutes: number) => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
   const [invalid, setInvalid] = useState(false);
@@ -120,7 +197,12 @@ function TimeCell({ problem: p, onSave }: { problem: SetProblem; onSave: (minute
     if (!p.solved) setEditing(false);
   }, [p.solved]);
 
-  if (!p.solved) return <span className={styles.timeEmpty} aria-label="No time">—</span>;
+  if (!p.solved)
+    return (
+      <span className={styles.timeEmpty} aria-label="No time">
+        —
+      </span>
+    );
 
   if (editing) {
     const close = () => {
@@ -131,7 +213,12 @@ function TimeCell({ problem: p, onSave }: { problem: SetProblem; onSave: (minute
     const submit = (e: FormEvent) => {
       e.preventDefault();
       const minutes = Number(value);
-      if (value.trim() === "" || !Number.isFinite(minutes) || minutes < 0 || minutes > 10_000) {
+      if (
+        value.trim() === "" ||
+        !Number.isFinite(minutes) ||
+        minutes < 0 ||
+        minutes > 10_000
+      ) {
         setInvalid(true);
         return;
       }
@@ -139,7 +226,11 @@ function TimeCell({ problem: p, onSave }: { problem: SetProblem; onSave: (minute
       close();
     };
     return (
-      <form className={styles.timeForm} onSubmit={submit} onKeyDown={(e) => e.key === "Escape" && close()}>
+      <form
+        className={styles.timeForm}
+        onSubmit={submit}
+        onKeyDown={(e) => e.key === "Escape" && close()}
+      >
         <input
           ref={inputRef}
           className={`mono tabular ${styles.timeInput}`}
@@ -155,8 +246,17 @@ function TimeCell({ problem: p, onSave }: { problem: SetProblem; onSave: (minute
             setInvalid(false);
           }}
         />
-        <button type="submit" className={styles.iconBtn} aria-label="Save time"><CheckIcon /></button>
-        <button type="button" className={styles.iconBtn} aria-label="Cancel" onClick={close}><CloseIcon /></button>
+        <button type="submit" className={styles.iconBtn} aria-label="Save time">
+          <CheckIcon />
+        </button>
+        <button
+          type="button"
+          className={styles.iconBtn}
+          aria-label="Cancel"
+          onClick={close}
+        >
+          <CloseIcon />
+        </button>
       </form>
     );
   }
@@ -164,12 +264,24 @@ function TimeCell({ problem: p, onSave }: { problem: SetProblem; onSave: (minute
   return (
     <span className={styles.timeView}>
       {p.timeMs === null ? (
-        <span className={styles.untimed} title="Solved while the timer wasn't running">untimed</span>
+        <span
+          className={styles.untimed}
+          title="Solved while the timer wasn't running"
+        >
+          untimed
+        </span>
       ) : (
-        <span className={`mono tabular ${styles.timeValue}`} title={`${formatMinSec(p.timeMs)} (mm:ss)${p.timeEdited ? " · edited" : ""}`}>
+        <span
+          className={`mono tabular ${styles.timeValue}`}
+          title={`${formatMinSec(p.timeMs)} (mm:ss)${p.timeEdited ? " · edited" : ""}`}
+        >
           {formatMinutes(p.timeMs)}
           <span className={styles.timeUnit}> min</span>
-          {p.timeEdited && <span className={styles.edited} aria-label="edited">*</span>}
+          {p.timeEdited && (
+            <span className={styles.edited} aria-label="edited">
+              *
+            </span>
+          )}
         </span>
       )}
       <button
