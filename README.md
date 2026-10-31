@@ -73,7 +73,7 @@ Each sheet loads lazily through `fetchSheetProblems`, so a remote source could r
 
 ## Live sources
 
-LeetCode and Codeforces are fetched by this app's server, never by the browser, and filtered down to problems worth practising. Each route caches its list in memory: once the list is stale it keeps serving the last good copy while a single refresh runs, and a failed refresh never takes the list away. Responses are gzipped (the Codeforces list is about 1.1 MB as JSON and about 140 KB on the wire).
+LeetCode and Codeforces are fetched by this app's server, never by the browser, and filtered down to problems worth practising. Each route caches its list in memory: once the list is stale it keeps serving the last good copy while a single refresh runs, and a failed refresh never takes the list away. The lists are sent as plain JSON, about 1.1 MB for Codeforces and 0.5 MB for LeetCode. Cloudflare compresses them at the edge to about 140 KB and 70 KB; a local `next start` sends them uncompressed. Don't gzip them in the route: the Workers runtime would compress them a second time.
 
 | | Codeforces | LeetCode |
 |---|---|---|
