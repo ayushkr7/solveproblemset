@@ -4,16 +4,21 @@
   "private": true,
   "description": "Blueprint — a DSA & competitive programming practice tracker with personalised problem sets and precise per-problem timing.",
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/"
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "engines": {
     "node": ">=20.9.0"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.15",
     "@radix-ui/react-dialog": "1.1.23",
     "exceljs": "^4.4.0",
     "next": "^16.4.3",
@@ -24,6 +29,7 @@
     "@types/node": "^20.19.43",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.156.0"
   }
 }
