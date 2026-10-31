@@ -1,12 +1,13 @@
-import { STORAGE_KEYS } from "./storage";
+import { STORAGE_KEYS, readRaw, writeRaw } from "./storage";
 
 export type Theme = "light" | "dark";
 
 /**
  * Runs inline in <head> before first paint: applies the saved theme, or the OS
- * preference on a first visit, so the wrong theme never flashes.
+ * preference on a first visit, so the wrong theme never flashes. It also reads
+ * the pre-rename key, because the app's scripts migrate keys only after paint.
  */
-export const themeInitScript = `(function(){try{var k=${JSON.stringify(STORAGE_KEYS.theme)};var t=null;try{t=localStorage.getItem(k)}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}var d=document.documentElement;d.dataset.theme=t;d.style.colorScheme=t}catch(e){}})();`;
+export const themeInitScript = `(function(){try{var k=${JSON.stringify(STORAGE_KEYS.theme)},l=${JSON.stringify(STORAGE_KEYS.legacyTheme)};var t=null;try{t=localStorage.getItem(k)||localStorage.getItem(l)}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}var d=document.documentElement;d.dataset.theme=t;d.style.colorScheme=t}catch(e){}})();`;
 
 function apply(theme: Theme) {
   const root = document.documentElement;
@@ -21,7 +22,7 @@ export function getTheme(): Theme {
 /** Explicit user choice; persisted so it wins over the OS preference from now on. */
 export function setTheme(theme: Theme) {
   try {
-    localStorage.setItem(STORAGE_KEYS.theme, theme);
+    writeRaw(STORAGE_KEYS.theme, theme);
   } catch {
     /* still apply for this page view */
   }
@@ -33,12 +34,8 @@ export function setTheme(theme: Theme) {
 }
 
 function hasExplicitChoice(): boolean {
-  try {
-    const t = localStorage.getItem(STORAGE_KEYS.theme);
-    return t === "light" || t === "dark";
-  } catch {
-    return false;
-  }
+  const t = readRaw(STORAGE_KEYS.theme);
+  return t === "light" || t === "dark";
 }
 
 /** Subscribe to theme changes: data-theme mutations, other tabs, and OS changes when no choice is saved. */

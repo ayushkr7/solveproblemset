@@ -34,7 +34,7 @@ function Workspace({ set }: { set: ProblemSet }) {
   const [panelVisible, setPanelVisible] = useState(true);
 
   useEffect(() => {
-    document.title = `${set.name} · Blueprint DSA`;
+    document.title = `${set.name} · Solve Problemset`;
   }, [set.name]);
 
   // Show the compact dock only while the full timer panel is off-screen.

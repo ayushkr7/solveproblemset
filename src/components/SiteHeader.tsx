@@ -20,7 +20,7 @@ export function Logo() {
         <path d="M14 8.5v11M8.5 14h11" stroke="var(--accent)" strokeWidth="1.5" />
       </svg>
       <span className={styles.word}>
-        Blueprint<span className={styles.slash}>/</span>DSA
+        Solve<span className={styles.slash}>/</span>Problemset
       </span>
     </span>
   );
@@ -31,7 +31,7 @@ export function SiteHeader() {
   return (
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
-        <Link href="/" className={styles.home} aria-label="Blueprint DSA — home">
+        <Link href="/" className={styles.home} aria-label="Solve Problemset — home">
           <Logo />
         </Link>
         <nav aria-label="Main" className={styles.nav}>

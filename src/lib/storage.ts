@@ -3,10 +3,13 @@
  * mode, disabled storage); writes surface a typed error so callers can show it.
  */
 
-export const STORAGE_PREFIX = "blueprint-dsa";
+export const STORAGE_PREFIX = "solve-problemset";
+/** Prefix used while the app was called Blueprint DSA. Its keys are moved to STORAGE_PREFIX on first access. */
+export const LEGACY_STORAGE_PREFIX = "blueprint-dsa";
 
 export const STORAGE_KEYS = {
   theme: `${STORAGE_PREFIX}:theme`,
+  legacyTheme: `${LEGACY_STORAGE_PREFIX}:theme`,
   setPrefix: `${STORAGE_PREFIX}:set:`,
   set: (id: string) => `${STORAGE_PREFIX}:set:${id}`,
 } as const;
@@ -23,9 +26,39 @@ export class StorageWriteError extends Error {
   }
 }
 
+let migrated = false;
+
+/**
+ * Move data saved under the old app name (`blueprint-dsa:*`) to the current
+ * keys, once per page load. A key is only removed after its copy is written,
+ * and an existing new key is never overwritten. If storage is full, the rest
+ * stay where they are and are retried on the next load.
+ */
+function migrateLegacyKeys(s: Storage): void {
+  migrated = true;
+  try {
+    const legacy: string[] = [];
+    for (let i = 0; i < s.length; i++) {
+      const k = s.key(i);
+      if (k?.startsWith(`${LEGACY_STORAGE_PREFIX}:`)) legacy.push(k);
+    }
+    for (const old of legacy) {
+      const value = s.getItem(old);
+      const next = STORAGE_PREFIX + old.slice(LEGACY_STORAGE_PREFIX.length);
+      if (value !== null && s.getItem(next) === null) s.setItem(next, value);
+      s.removeItem(old);
+    }
+  } catch {
+    /* unavailable or full: try again next page load */
+  }
+}
+
 function storage(): Storage | null {
   try {
-    return typeof window === "undefined" ? null : window.localStorage;
+    if (typeof window === "undefined") return null;
+    const s = window.localStorage;
+    if (!migrated) migrateLegacyKeys(s);
+    return s;
   } catch {
     return null;
   }

@@ -64,7 +64,7 @@ export async function readXlsx(data: ArrayBuffer): Promise<SheetTable[]> {
 export async function writeXlsx(book: WorkbookOut): Promise<Uint8Array<ArrayBuffer>> {
   const Workbook = await loadWorkbook();
   const wb = new Workbook();
-  wb.creator = "Blueprint DSA";
+  wb.creator = "Solve Problemset";
   wb.created = book.created;
   wb.modified = book.created;
 

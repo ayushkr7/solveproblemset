@@ -3,7 +3,7 @@
  * React components (via useSyncExternalStore) re-render on local writes and on
  * writes from other tabs.
  *
- * Each set lives under its own key (`blueprint-dsa:set:<id>`), so sets are fully
+ * Each set lives under its own key (`solve-problemset:set:<id>`), so sets are fully
  * independent: writing or deleting one never rewrites another.
  */
 import { initialSession } from "./timer";

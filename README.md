@@ -1,4 +1,4 @@
-# Blueprint DSA
+# Solve Problemset
 
 A client-side DSA / competitive-programming practice tracker. Build personalised problem sets from Striver's A2Z and 180 sheets, NeetCode's Blind 75, or live, quality-filtered pools from LeetCode (by difficulty) and Codeforces (by rating). Time every solve and resume where you left off. Sets persist in `localStorage`.
 
@@ -48,7 +48,7 @@ tests/                    timer, excel, sources (bundled sheets), live-sources
 
 ## Storage
 
-Each set is stored under its own key, `blueprint-dsa:set:<uuid>`, so sets are independent. The theme is stored under `blueprint-dsa:theme`. Saved data is validated when it's read, and the record carries a `schemaVersion` for future migrations. Changes made in other tabs sync through the `storage` event.
+Each set is stored under its own key, `solve-problemset:set:<uuid>`, so sets are independent. The theme is stored under `solve-problemset:theme`. Data saved before the rename (`blueprint-dsa:*`) is moved to these keys the first time the app touches storage. Saved data is validated when it's read, and the record carries a `schemaVersion` for future migrations. Changes made in other tabs sync through the `storage` event.
 
 ## Excel import / export
 
