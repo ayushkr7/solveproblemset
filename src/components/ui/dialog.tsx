@@ -1,20 +1,19 @@
 "use client";
 
 /**
- * shadcn/ui Dialog, built on Radix UI. Same parts and API as shadcn's
+ * shadcn/ui Dialog on Base UI. Same parts and API as shadcn's
  * `components/ui/dialog`, styled with this project's design tokens (globals.css)
  * instead of Tailwind classes.
  *
- * Radix owns all modal behaviour: focus trap, Escape, outside click, scroll lock
- * (with scrollbar-gap compensation), `pointer-events` on <body>, and hiding the
- * rest of the page from assistive technology. Nothing here touches global
- * styles. The only addition is focus *return* for dialogs opened from state
- * rather than a <DialogTrigger> (Radix returns focus only to a trigger); it uses
- * Radix's own onOpenAutoFocus / onCloseAutoFocus hooks.
+ * Base UI owns all modal behaviour: focus trap, Escape, outside click, scroll
+ * lock, and hiding the rest of the page from assistive technology
+ * (aria-hidden). The additions here are focus rules for dialogs opened from
+ * state rather than a <DialogTrigger> (see `usePopupFocus`).
  */
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { useRef, type ComponentProps, type ReactNode, type RefObject } from "react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { useRef, useState, type ComponentProps, type ReactNode, type RefObject } from "react";
 import { CloseIcon } from "@/components/Icons";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function Dialog(props: ComponentProps<typeof DialogPrimitive.Root>) {
@@ -33,19 +32,71 @@ function DialogClose(props: ComponentProps<typeof DialogPrimitive.Close>) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
-function DialogOverlay({ className, ...props }: ComponentProps<typeof DialogPrimitive.Overlay>) {
-  return <DialogPrimitive.Overlay data-slot="dialog-overlay" className={cn("dialog-overlay", className)} {...props} />;
+function DialogOverlay({ className, ...props }: ComponentProps<typeof DialogPrimitive.Backdrop> & { className?: string }) {
+  return <DialogPrimitive.Backdrop data-slot="dialog-overlay" className={cn("dialog-overlay", className)} {...props} />;
 }
 
-/** A usable focus target: still in the document, enabled and not inside a closed dialog. */
-function focusable(el: HTMLElement | null | undefined): el is HTMLElement {
-  return !!el && el.isConnected && el !== document.body && !el.matches(":disabled") && !el.closest("[inert]");
+// ---------------------------------------------------------------------------
+// Focus rules shared with alert-dialog.tsx
+
+/** A usable focus target: still in the document, enabled and not inside an inert (closed or background) region. */
+function focusable(el: Element | null | undefined): el is HTMLElement {
+  return el instanceof HTMLElement && el.isConnected && el !== document.body && !el.matches(":disabled") && !el.closest("[inert]");
 }
 
-const OPEN_DIALOG = '[data-slot="dialog-content"][data-state="open"]';
+const OPEN_POPUP = '[data-slot$="dialog-content"][data-open]';
 
-interface DialogContentProps extends ComponentProps<typeof DialogPrimitive.Content> {
-  /** Small mono label in the header bar, e.g. "Confirm restart". */
+/** Records the element that had focus when the popup mounted (Base UI moves focus later, in an effect). */
+function OpenerCapture({ into }: { into: RefObject<HTMLElement | null> }) {
+  useState(() => {
+    const active = typeof document === "undefined" ? null : document.activeElement;
+    into.current = active instanceof HTMLElement && active !== document.body ? active : null;
+  });
+  return null;
+}
+
+/**
+ * `initialFocus` / `finalFocus` for a popup:
+ * - opens on `initialFocus` when it can take focus, else Base UI's default (first tabbable);
+ * - closes to `returnFocus`, else the element that opened it; if that is gone (e.g. the
+ *   card whose Delete opened a confirmation was deleted) to the <main> landmark;
+ * - does nothing when another dialog opened as this one closed (preview → results).
+ */
+function usePopupFocus({
+  initialFocus,
+  returnFocus,
+}: {
+  initialFocus?: RefObject<HTMLElement | null>;
+  returnFocus?: RefObject<HTMLElement | null>;
+}) {
+  const opener = useRef<HTMLElement | null>(null);
+  const popup = useRef<HTMLDivElement>(null);
+  return {
+    popup,
+    capture: <OpenerCapture into={opener} />,
+    initial: () => (focusable(initialFocus?.current) ? initialFocus.current : true),
+    final: () => {
+      // Opened without a focused element (e.g. a mouse click in Safari): Base UI's default, the trigger.
+      if (!returnFocus && !opener.current) return true;
+      // Base UI asks while the dialog starts closing, before React commits what
+      // the action changed (a deleted card and its button are still in the
+      // document), so the target is chosen a frame later.
+      requestAnimationFrame(() => {
+        const other = [...document.querySelectorAll(OPEN_POPUP)].some((el) => el !== popup.current);
+        if (other) return;
+        const target = [returnFocus?.current, opener.current].find(focusable) ?? document.getElementById("main");
+        target?.focus({ preventScroll: true });
+      });
+      return false;
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+
+interface DialogContentProps extends Omit<ComponentProps<typeof DialogPrimitive.Popup>, "initialFocus" | "finalFocus" | "className"> {
+  className?: string;
+  /** Small mono label in the header bar, e.g. "Import preview". */
   eyebrow?: ReactNode;
   showCloseButton?: boolean;
   size?: "default" | "wide";
@@ -66,64 +117,33 @@ function DialogContent({
   size = "default",
   initialFocus,
   returnFocus,
-  onOpenAutoFocus,
-  onCloseAutoFocus,
   ...props
 }: DialogContentProps) {
-  const openedFrom = useRef<HTMLElement | null>(null);
-
+  const focus = usePopupFocus({ initialFocus, returnFocus });
   return (
     <DialogPortal>
       <DialogOverlay />
-      <DialogPrimitive.Content
+      <DialogPrimitive.Popup
+        ref={focus.popup}
         data-slot="dialog-content"
         className={cn("dialog", size === "wide" && "dialog--wide", className)}
-        onOpenAutoFocus={(event) => {
-          // Still the element that opened the dialog: Radix hasn't moved focus yet.
-          const active = document.activeElement;
-          openedFrom.current = active instanceof HTMLElement && active !== document.body ? active : null;
-          onOpenAutoFocus?.(event);
-          if (!event.defaultPrevented && focusable(initialFocus?.current)) {
-            event.preventDefault();
-            initialFocus.current.focus();
-          }
-        }}
-        onCloseAutoFocus={(event) => {
-          onCloseAutoFocus?.(event);
-          if (event.defaultPrevented) return;
-          // Another dialog opened as this one closed (e.g. preview → results): it owns focus now.
-          if (document.querySelector(OPEN_DIALOG)) {
-            event.preventDefault();
-            return;
-          }
-          // preventScroll: the scroll lock kept the page where it was; don't jump.
-          const target = [returnFocus?.current, openedFrom.current].find(focusable);
-          if (target) {
-            event.preventDefault();
-            target.focus({ preventScroll: true });
-            return;
-          }
-          // Let Radix focus the DialogTrigger, if there is one; otherwise use <main>.
-          queueMicrotask(() => {
-            if (document.activeElement === document.body && !document.querySelector(OPEN_DIALOG)) {
-              document.getElementById("main")?.focus({ preventScroll: true });
-            }
-          });
-        }}
+        initialFocus={focus.initial}
+        finalFocus={focus.final}
         {...props}
       >
+        {focus.capture}
         {(eyebrow || showCloseButton) && (
           <div data-slot="dialog-bar" className="dialog__head">
             <span className="label">{eyebrow}</span>
             {showCloseButton && (
-              <DialogPrimitive.Close className="btn btn--ghost btn--icon" aria-label="Close">
+              <DialogPrimitive.Close render={<Button variant="ghost" size="icon" aria-label="Close" />}>
                 <CloseIcon />
               </DialogPrimitive.Close>
             )}
           </div>
         )}
         {children}
-      </DialogPrimitive.Content>
+      </DialogPrimitive.Popup>
     </DialogPortal>
   );
 }
@@ -141,16 +161,19 @@ function DialogFooter({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="dialog-footer" className={cn("dialog__foot", className)} {...props} />;
 }
 
-function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title> & { className?: string }) {
   return <DialogPrimitive.Title data-slot="dialog-title" className={cn("dialog__title", className)} {...props} />;
 }
 
 /** Rendered as a <div> so it can hold paragraphs and lists. */
-function DialogDescription({ className, children, ...props }: ComponentProps<typeof DialogPrimitive.Description>) {
+function DialogDescription({ className, ...props }: ComponentProps<typeof DialogPrimitive.Description> & { className?: string }) {
   return (
-    <DialogPrimitive.Description asChild data-slot="dialog-description" {...props}>
-      <div className={cn("dialog__text", className)}>{children}</div>
-    </DialogPrimitive.Description>
+    <DialogPrimitive.Description
+      data-slot="dialog-description"
+      render={<div />}
+      className={cn("dialog__text", className)}
+      {...props}
+    />
   );
 }
 
@@ -166,4 +189,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  usePopupFocus,
 };

@@ -53,7 +53,6 @@
 }
 .sheet:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-.sheetRadio { position: absolute; opacity: 0; pointer-events: none; }
 
 .sheetTop { display: flex; justify-content: space-between; align-items: center; }
 .sheetCode {
@@ -69,6 +68,8 @@
   border-radius: 50%;
   display: grid; place-items: center;
 }
+/* The dot is Base UI's focusable role="radio"; the whole card shows the focus ring. */
+.radioDot:focus-visible { outline: none; }
 .sheet[data-checked] .radioDot { border-color: var(--accent); }
 .sheet[data-checked] .radioDot::after {
   content: "";
@@ -101,12 +102,23 @@
   cursor: pointer;
   font-size: 0.9375rem;
 }
-.check input {
+/* Base UI checkbox drawn like the native accent-colour box it replaces. */
+.checkBox {
+  display: grid;
+  place-items: center;
   width: 20px; height: 20px;
   margin-top: 1px;
   flex: none;
-  accent-color: var(--accent);
+  border: 1.5px solid var(--ink-2);
+  border-radius: 3px;
+  background: var(--surface);
+  color: transparent;
 }
+.checkBox svg { width: 14px; height: 14px; stroke-width: 2.5; }
+.checkBox :global(.checkbox__dash) { display: none; }
+.check:hover .checkBox { border-color: var(--accent); }
+.checkBox[data-checked] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.checkBox:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Presets */
 .presets { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -155,8 +167,9 @@
   transition: background-color 0.15s;
   touch-action: manipulation;
 }
-.stepBtn:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
-.stepBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.stepBtn:hover:not(:disabled, [data-disabled]) { background: var(--ink); color: var(--paper); }
+.stepBtn:disabled,
+.stepBtn[data-disabled] { opacity: 0.35; cursor: not-allowed; }
 .stepBtn svg { width: 16px; height: 16px; }
 
 .countInput {
@@ -188,7 +201,9 @@
   font-weight: 500;
   cursor: pointer;
 }
-.ratingSelect:focus { outline: none; border-color: var(--accent); background: var(--accent-soft); }
+.ratingSelect:focus,
+.ratingSelect[data-popup-open] { outline: none; border-color: var(--accent); background: var(--accent-soft); }
+.ratingPopup { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .ratingSelect[aria-invalid="true"] { border-color: var(--danger); }
 .presets :global(.btn[aria-pressed="true"]) { --btn-border: var(--accent); --btn-bg: var(--accent-soft); }
 

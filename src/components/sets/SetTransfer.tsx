@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
 import { AlertIcon, InfoIcon, UploadIcon } from "@/components/Icons";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogBody,
@@ -13,6 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger } from "@/components/ui/select";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
 import { formatClock, plural } from "@/lib/format";
@@ -63,7 +66,7 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
   const [results, setResults] = useState<Results | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
 
-  // aria-disabled rather than disabled: a disabled button drops keyboard focus,
+  // focusableWhenDisabled: a natively disabled button drops keyboard focus,
   // leaving nothing for the dialogs to return focus to.
   const unavailable = reading || preview !== null;
   const chooseFile = () => {
@@ -87,26 +90,25 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
   return (
     <>
       <div className={styles.importGroup}>
-        <button
+        <Button
           ref={importRef}
-          type="button"
-          className="btn"
-          onClick={() => !unavailable && chooseFile()}
+          onClick={chooseFile}
           onPointerEnter={preloadXlsx}
           onFocus={preloadXlsx}
-          aria-disabled={unavailable || undefined}
+          disabled={unavailable}
+          focusableWhenDisabled
           aria-busy={reading || undefined}
         >
           {reading ? <span className="spinner" aria-hidden="true" /> : <UploadIcon />}
           {reading ? "Reading…" : "Import sets"}
-        </button>
+        </Button>
         <FormatGuideDialog
           open={guideOpen}
           onOpenChange={setGuideOpen}
           trigger={
-            <button type="button" className="btn btn--ghost btn--icon" aria-label="Excel import format" title="Excel import format">
+            <Button variant="ghost" size="icon" aria-label="Excel import format" title="Excel import format">
               <InfoIcon />
-            </button>
+            </Button>
           }
         />
         <input
@@ -144,26 +146,23 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
                 </ul>
               </DialogBody>
               <DialogFooter>
-                <button
-                  type="button"
-                  className="btn"
+                <Button
                   onClick={() => {
                     setInvalid(null);
                     setGuideOpen(true);
                   }}
                 >
                   <InfoIcon /> Format guide
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--primary"
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={() => {
                     setInvalid(null);
                     chooseFile();
                   }}
                 >
                   <UploadIcon /> Choose another file
-                </button>
+                </Button>
               </DialogFooter>
             </>
           )}
@@ -334,29 +333,32 @@ function PreviewPanel({
                 )}
 
                 <div className={styles.planControls}>
-                  <label className="visually-hidden" htmlFor={`${id}-action`}>
-                    What to do with “{item.set.name}”
-                  </label>
-                  <select
-                    ref={i === firstConflict ? setFocusTarget : undefined}
-                    id={`${id}-action`}
-                    className={`input ${styles.select}`}
+                  <Select
+                    items={ACTION_LABEL}
                     value={item.action}
-                    aria-describedby={item.conflict ? `${id}-conflict` : undefined}
-                    onChange={(e) => update(i, { action: e.target.value as PlanAction })}
+                    onValueChange={(value) => value && update(i, { action: value as PlanAction })}
                   >
-                    {(Object.keys(ACTION_LABEL) as PlanAction[]).map((a) => (
-                      <option key={a} value={a}>
-                        {ACTION_LABEL[a]}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectLabel className="visually-hidden">What to do with “{item.set.name}”</SelectLabel>
+                    <SelectTrigger
+                      ref={i === firstConflict ? setFocusTarget : undefined}
+                      id={`${id}-action`}
+                      className={`input ${styles.select}`}
+                      aria-describedby={item.conflict ? `${id}-conflict` : undefined}
+                    />
+                    <SelectContent>
+                      {(Object.keys(ACTION_LABEL) as PlanAction[]).map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {ACTION_LABEL[a]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {item.action === "rename" && (
                     <>
                       <label className="visually-hidden" htmlFor={`${id}-name`}>
                         New name for “{item.set.name}”
                       </label>
-                      <input
+                      <Input
                         id={`${id}-name`}
                         className={`input ${styles.renameInput}`}
                         value={item.rename}
@@ -384,22 +386,17 @@ function PreviewPanel({
             Resolve {plural(errors.size, "name")} to continue.
           </p>
         )}
-        <DialogClose asChild>
-          <button type="button" className="btn">
-            Cancel import
-          </button>
-        </DialogClose>
-        <button
+        <DialogClose render={<Button />}>Cancel import</DialogClose>
+        <Button
           ref={firstConflict === -1 ? setFocusTarget : undefined}
-          type="button"
-          className="btn btn--primary"
+          variant="primary"
           onClick={confirm}
           disabled={errors.size > 0 || toImport === 0 || saving}
           aria-busy={saving || undefined}
         >
           {saving ? <span className="spinner" aria-hidden="true" /> : <UploadIcon />}
           {toImport === 0 ? "Nothing to import" : `Import ${plural(toImport, "set")}`}
-        </button>
+        </Button>
       </DialogFooter>
     </>
   );
@@ -464,11 +461,7 @@ function ImportResultsDialog({
               )}
             </DialogBody>
             <DialogFooter>
-              <DialogClose asChild>
-                <button ref={doneRef} type="button" className="btn btn--primary">
-                  Done
-                </button>
-              </DialogClose>
+              <DialogClose render={<Button ref={doneRef} variant="primary" />}>Done</DialogClose>
             </DialogFooter>
           </>
         )}
@@ -495,7 +488,7 @@ function FormatGuideDialog({
   const linkId = useId();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent size="wide" eyebrow="Import format">
         <DialogBody>
           <DialogHeader>
@@ -541,11 +534,7 @@ function FormatGuideDialog({
           </section>
         </DialogBody>
         <DialogFooter>
-          <DialogClose asChild>
-            <button type="button" className="btn">
-              Close
-            </button>
-          </DialogClose>
+          <DialogClose render={<Button />}>Close</DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>

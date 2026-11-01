@@ -8,6 +8,9 @@ import {
   ExternalIcon,
   PencilIcon,
 } from "@/components/Icons";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { formatMinSec, formatMinutes, linkSite } from "@/lib/format";
 import { compareProblems } from "@/lib/generate";
 import {
@@ -97,7 +100,6 @@ function ProblemRow({
   onToggle: ProblemTableProps["onToggle"];
   onEditTime: ProblemTableProps["onEditTime"];
 }) {
-  const checkId = `solved-${p.id}`;
   const site = linkSite(p.url);
   // Older sets linked the title straight to LeetCode; don't show the same link twice.
   const leetCode =
@@ -155,17 +157,14 @@ function ProblemRow({
         )}
       </td>
       <td className={styles.status}>
-        <label htmlFor={checkId} className={styles.checkHit}>
-          <input
-            id={checkId}
-            type="checkbox"
-            className={styles.check}
+        <label className={styles.checkHit}>
+          <Checkbox
+            className={styles.checkBox}
             checked={p.solved}
-            onChange={(e) => onToggle(p.id, e.target.checked)}
-          />
-          <span className={styles.checkBox} aria-hidden="true">
-            <CheckIcon />
-          </span>
+            onCheckedChange={(checked) => onToggle(p.id, checked)}
+          >
+            <CheckIcon aria-hidden="true" />
+          </Checkbox>
           <span className="visually-hidden">Mark {p.title} as solved</span>
         </label>
       </td>
@@ -231,7 +230,7 @@ function TimeCell({
         onSubmit={submit}
         onKeyDown={(e) => e.key === "Escape" && close()}
       >
-        <input
+        <Input
           ref={inputRef}
           className={`mono tabular ${styles.timeInput}`}
           type="number"
@@ -246,17 +245,12 @@ function TimeCell({
             setInvalid(false);
           }}
         />
-        <button type="submit" className={styles.iconBtn} aria-label="Save time">
+        <Button type="submit" variant="bare" className={styles.iconBtn} aria-label="Save time">
           <CheckIcon />
-        </button>
-        <button
-          type="button"
-          className={styles.iconBtn}
-          aria-label="Cancel"
-          onClick={close}
-        >
+        </Button>
+        <Button variant="bare" className={styles.iconBtn} aria-label="Cancel" onClick={close}>
           <CloseIcon />
-        </button>
+        </Button>
       </form>
     );
   }
@@ -284,9 +278,9 @@ function TimeCell({
           )}
         </span>
       )}
-      <button
+      <Button
         ref={editBtnRef}
-        type="button"
+        variant="bare"
         className={styles.iconBtn}
         aria-label={`Edit time for ${p.title}`}
         onClick={() => {
@@ -295,7 +289,7 @@ function TimeCell({
         }}
       >
         <PencilIcon />
-      </button>
+      </Button>
     </span>
   );
 }

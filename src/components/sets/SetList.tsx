@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Checkbox } from "@/components/Checkbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
-  AlertIcon,
   ArrowRightIcon,
-  CheckIcon,
   DownloadIcon,
   PlusIcon,
   TrashIcon,
 } from "@/components/Icons";
+import { Button } from "@/components/ui/button";
+import { LabeledCheckbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { ToastProvider, Toaster, useToast } from "@/components/ui/toast";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
 import { downloadProblemSets, preloadXlsx } from "@/lib/excel/transfer";
@@ -22,18 +23,22 @@ import type { ProblemSet } from "@/lib/types";
 import { ImportSets } from "./SetTransfer";
 import styles from "./SetList.module.css";
 
-interface Toast {
-  tone: "success" | "error";
-  message: string;
-}
-
 /** What an export covers: everything, the selection, or one card's set. */
 type ExportTarget = "all" | "selected" | `set:${string}`;
 
 export function SetList() {
+  return (
+    <ToastProvider>
+      <SetListPage />
+      <Toaster />
+    </ToastProvider>
+  );
+}
+
+function SetListPage() {
   const sets = useProblemSets();
+  const toast = useToast();
   const [pendingDelete, setPendingDelete] = useState<ProblemSet | null>(null);
-  const [toast, setToast] = useState<Toast | null>(null);
   const [selected, setSelected] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -42,15 +47,6 @@ export function SetList() {
   const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = window.setTimeout(
-      () => setToast(null),
-      toast.tone === "error" ? 6000 : 3200,
-    );
-    return () => window.clearTimeout(t);
-  }, [toast]);
 
   useEffect(() => {
     if (highlightIds.size === 0) return;
@@ -84,13 +80,11 @@ export function SetList() {
           ? all.filter((s) => selected.has(s.id))
           : all.filter((s) => `set:${s.id}` === target);
     if (chosen.length === 0) {
-      setToast({
-        tone: "error",
-        message:
-          target === "all"
-            ? "There are no sets to export yet."
-            : "Select at least one set to export.",
-      });
+      toast.error(
+        target === "all"
+          ? "There are no sets to export yet."
+          : "Select at least one set to export.",
+      );
       return;
     }
     exporting.current = true;
@@ -103,13 +97,11 @@ export function SetList() {
         chosen.length === 1
           ? `“${chosen[0]!.name}”`
           : plural(chosen.length, "set");
-      setToast({ tone: "success", message: `Exported ${what} as ${fileName}` });
+      toast.success(`Exported ${what} as ${fileName}`);
     } catch {
-      setToast({
-        tone: "error",
-        message:
-          "The Excel file couldn’t be created. Check your connection and try again.",
-      });
+      toast.error(
+        "The Excel file couldn’t be created. Check your connection and try again.",
+      );
     } finally {
       exporting.current = false;
       setExportTarget(null);
@@ -132,7 +124,6 @@ export function SetList() {
     ) : (
       <DownloadIcon />
     );
-  console.log(sets);
   return (
     <>
       <header className="page-head">
@@ -177,28 +168,26 @@ export function SetList() {
           <div className={styles.selection}>
             {sets.length > 0 ? (
               <>
-                <Checkbox
+                <LabeledCheckbox
                   checked={allSelected}
                   indeterminate={selectedCount > 0 && !allSelected}
-                  onChange={(on) =>
+                  onCheckedChange={(on) =>
                     setSelected(on ? new Set(sets.map((s) => s.id)) : new Set())
                   }
                   label="Select all"
                   showLabel
                 />
-                {/* role="status", not aria-live: Radix's aria-hiding keeps [aria-live] regions (and
-                    their ancestors) exposed behind an open dialog. */}
                 <span className={`mono tabular ${styles.count}`} role="status">
                   {selectedCount} of {plural(sets.length, "set")} selected
                 </span>
-                <button
-                  type="button"
-                  className="btn btn--sm btn--ghost"
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() => setSelected(new Set())}
                   disabled={selectedCount === 0}
                 >
                   Deselect all
-                </button>
+                </Button>
               </>
             ) : (
               <span className={styles.count}>
@@ -213,14 +202,14 @@ export function SetList() {
                 setHighlightIds(new Set(imported.map((s) => s.id)));
               }}
             />
-            <button
-              type="button"
-              className={`btn ${styles.exportSelected}`}
+            {/* While an export runs the buttons stay focusable (aria-disabled), so focus isn't lost. */}
+            <Button
+              className={styles.exportSelected}
               onClick={() => void runExport("selected")}
               onPointerEnter={preloadXlsx}
               onFocus={preloadXlsx}
-              disabled={selectedCount === 0}
-              aria-disabled={exportTarget !== null || undefined}
+              disabled={selectedCount === 0 || exportTarget !== null}
+              focusableWhenDisabled={selectedCount > 0}
               aria-busy={exportTarget === "selected" || undefined}
             >
               {busyIcon("selected")} Export selected
@@ -229,19 +218,18 @@ export function SetList() {
                   {selectedCount}
                 </span>
               )}
-            </button>
-            <button
-              type="button"
-              className={`btn ${styles.exportAll}`}
+            </Button>
+            <Button
+              className={styles.exportAll}
               onClick={() => void runExport("all")}
               onPointerEnter={preloadXlsx}
               onFocus={preloadXlsx}
-              disabled={sets.length === 0}
-              aria-disabled={exportTarget !== null || undefined}
+              disabled={sets.length === 0 || exportTarget !== null}
+              focusableWhenDisabled={sets.length > 0}
               aria-busy={exportTarget === "all" || undefined}
             >
               {busyIcon("all")} Export all
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -301,10 +289,7 @@ export function SetList() {
           if (!pendingDelete) return;
           deleteSet(pendingDelete.id);
           toggle(pendingDelete.id, false);
-          setToast({
-            tone: "success",
-            message: `Deleted “${pendingDelete.name}”`,
-          });
+          toast.success(`Deleted “${pendingDelete.name}”`);
           setPendingDelete(null);
         }}
       >
@@ -317,17 +302,6 @@ export function SetList() {
           sets are not affected.
         </p>
       </ConfirmDialog>
-
-      {toast &&
-        (toast.tone === "error" ? (
-          <div className="toast toast--error" role="alert">
-            <AlertIcon width={16} height={16} /> {toast.message}
-          </div>
-        ) : (
-          <div className="toast" role="status">
-            <CheckIcon width={16} height={16} /> {toast.message}
-          </div>
-        ))}
     </>
   );
 }
@@ -395,9 +369,9 @@ function SetCard({
     >
       <div className={styles.cardTop}>
         <span className={styles.select}>
-          <Checkbox
+          <LabeledCheckbox
             checked={selected}
-            onChange={onSelect}
+            onCheckedChange={onSelect}
             label={`Select ${set.name}`}
           />
           <span className={`mono ${styles.index}`}>
@@ -456,35 +430,25 @@ function SetCard({
         </div>
       </dl>
 
-      <div
-        className="progress"
-        role="progressbar"
-        aria-label={`${set.name} completion`}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={stats.percent}
-      >
-        <span
-          className="progress__fill"
-          style={{ width: `${stats.percent}%` }}
-        />
-      </div>
+      <Progress value={stats.percent} aria-label={`${set.name} completion`} />
 
       <div className={styles.actions}>
         <div className={styles.actionGroup}>
-          <button
-            type="button"
-            className={`btn btn--sm btn--ghost ${styles.delete}`}
+          <Button
+            size="sm"
+            variant="ghost"
+            className={styles.delete}
             onClick={onDelete}
             aria-label={`Delete ${set.name}`}
           >
             <TrashIcon /> Delete
-          </button>
-          <button
-            type="button"
-            className="btn btn--sm btn--ghost"
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={onExport}
-            aria-disabled={exportDisabled || undefined}
+            disabled={exportDisabled}
+            focusableWhenDisabled
             aria-busy={exporting || undefined}
             aria-label={`Export ${set.name} to Excel`}
           >
@@ -494,7 +458,7 @@ function SetCard({
               <DownloadIcon />
             )}{" "}
             Export
-          </button>
+          </Button>
         </div>
         <Link
           href={`/sets/${set.id}`}

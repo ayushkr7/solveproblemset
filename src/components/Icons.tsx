@@ -52,3 +52,4 @@ export const CloseIcon = (p: IconProps) => <Icon {...p}><path d="M6 6l12 12M18 6
 export const PencilIcon = (p: IconProps) => <Icon {...p}><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" /></Icon>;
 export const UploadIcon = (p: IconProps) => <Icon {...p}><path d="M12 15V4M7 9l5-5 5 5M4 15v5h16v-5" /></Icon>;
 export const DownloadIcon = (p: IconProps) => <Icon {...p}><path d="M12 4v11M7 10l5 5 5-5M4 15v5h16v-5" /></Icon>;
+export const ChevronDownIcon = (p: IconProps) => <Icon {...p}><path d="m6 9 6 6 6-6" /></Icon>;

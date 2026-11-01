@@ -138,13 +138,6 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.check {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
 .checkBox {
   display: grid;
   place-items: center;
@@ -153,14 +146,15 @@
   border: 1.5px solid var(--ink-2);
   background: var(--surface);
   color: transparent;
-  pointer-events: none;
+  cursor: inherit;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
 }
 .checkBox svg { width: 16px; height: 16px; stroke-width: 2.5; }
 .checkHit:hover .checkBox { border-color: var(--accent); }
-.check:checked + .checkBox { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.check:active + .checkBox { transform: scale(0.92); }
-.check:focus-visible + .checkBox { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* Base UI checkbox: the box is the focusable role="checkbox" element. */
+.checkBox[data-checked] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.checkHit:active .checkBox { transform: scale(0.92); }
+.checkBox:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .time { text-align: right; white-space: nowrap; }
 .timeEmpty { color: var(--ink-3); font-family: var(--font-mono); }

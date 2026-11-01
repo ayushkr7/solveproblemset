@@ -17,7 +17,10 @@ src/
   app/                    routes: / (landing), /create, /sets, /sets/[id]
     api/sources/          GET /api/sources/leetcode, /api/sources/codeforces (server-side fetch + cache)
   components/             shared UI (header, theme toggle, confirm dialog, badges)
-    ui/dialog.tsx         shadcn/ui Dialog on Radix: use it for every modal
+    ui/                   shadcn/ui-style components on Base UI (@base-ui/react): button, dialog,
+                          alert-dialog, checkbox, radio-group, number-field, select, toggle, toast,
+                          progress, field, input. Styled by globals.css tokens, not Tailwind; use
+                          these instead of native controls or new primitives
     create/               problem-set form
     sets/                 previous-sets listing
     set-detail/           timer panel, problems table, detail page

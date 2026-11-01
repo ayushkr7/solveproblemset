@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { getTheme, setTheme, subscribeTheme, type Theme } from "@/lib/theme";
 import { MoonIcon, SunIcon } from "./Icons";
+import { Button } from "./ui/button";
 
 export function ThemeToggle() {
   // Server snapshot is null: the real theme is only known after the inline
@@ -11,14 +12,14 @@ export function ThemeToggle() {
   const next: Theme = theme === "dark" ? "light" : "dark";
 
   return (
-    <button
-      type="button"
-      className="btn btn--icon theme-toggle"
+    <Button
+      size="icon"
+      className="theme-toggle"
       onClick={() => setTheme(next)}
       aria-label={theme ? `Switch to ${next} theme` : "Toggle theme"}
       title={theme ? `Switch to ${next} theme` : undefined}
     >
       {theme === "dark" ? <SunIcon /> : theme === "light" ? <MoonIcon /> : <span className="theme-toggle__blank" />}
-    </button>
+    </Button>
   );
 }

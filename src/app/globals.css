@@ -169,9 +169,18 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.48 0 0 0 0 0.42 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-body > * {
+/* Page content sits above the paper grain. :where() keeps this as weak as
+   `body > *`, so components' own rules (the sticky header's position and
+   z-index 40) still win. */
+body > :where(:not([data-base-ui-portal])) {
   position: relative;
   z-index: 1;
+}
+/* Base UI portals (dialogs, toasts) stack above all page content, including
+   the sticky header. */
+body > [data-base-ui-portal] {
+  position: relative;
+  z-index: 100;
 }
 
 img,
@@ -494,7 +503,9 @@ main:focus {
   box-shadow: 0 0 0 3px var(--danger-soft);
 }
 
-/* ---------- Checkbox (components/Checkbox.tsx) ---------- */
+/* ---------- Checkbox (components/ui/checkbox.tsx) ---------- */
+/* The box is Base UI's focusable role="checkbox" span; state comes from its
+   data-checked / data-indeterminate attributes. */
 
 .checkbox {
   position: relative;
@@ -509,13 +520,6 @@ main:focus {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.checkbox__input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: inherit;
-}
 .checkbox__box {
   display: grid;
   place-items: center;
@@ -526,7 +530,7 @@ main:focus {
   border: 1.5px solid var(--ink-2);
   background: var(--surface);
   color: transparent;
-  pointer-events: none;
+  cursor: inherit;
   transition:
     background-color 0.15s,
     border-color 0.15s,
@@ -545,22 +549,22 @@ main:focus {
 .checkbox:hover .checkbox__box {
   border-color: var(--accent);
 }
-.checkbox__input:checked + .checkbox__box,
-.checkbox__input:indeterminate + .checkbox__box {
+.checkbox__box[data-checked],
+.checkbox__box[data-indeterminate] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
 }
-.checkbox__input:indeterminate + .checkbox__box .checkbox__tick {
+.checkbox__box[data-indeterminate] .checkbox__tick {
   display: none;
 }
-.checkbox__input:indeterminate + .checkbox__box .checkbox__dash {
+.checkbox__box[data-indeterminate] .checkbox__dash {
   display: block;
 }
-.checkbox__input:active + .checkbox__box {
+.checkbox:active .checkbox__box {
   transform: scale(0.92);
 }
-.checkbox__input:focus-visible + .checkbox__box {
+.checkbox__box:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
@@ -638,6 +642,11 @@ main:focus {
   border: 1px solid var(--rule);
   overflow: hidden;
 }
+.progress__track {
+  position: absolute;
+  inset: 0;
+}
+/* Base UI sets the indicator's width (and inset-inline-start) inline. */
 .progress__fill {
   position: absolute;
   inset: 0 auto 0 0;
@@ -645,10 +654,97 @@ main:focus {
   transition: width 0.4s var(--ease);
 }
 
+/* ---------- Select (components/ui/select.tsx) ---------- */
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.select-trigger__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-trigger__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--ink-2);
+}
+.select-trigger__icon svg {
+  width: 16px;
+  height: 16px;
+}
+.select-trigger[data-popup-open] .select-trigger__icon {
+  color: var(--accent);
+}
+
+.select-positioner {
+  z-index: 110;
+  outline: 0;
+}
+.select-popup {
+  min-width: var(--anchor-width);
+  max-height: var(--available-height);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-dialog);
+  outline: 0;
+}
+.select-list {
+  padding: 4px 0;
+}
+.select-item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 16px 0 12px;
+  font-size: 0.9375rem;
+  cursor: default;
+  user-select: none;
+  outline: 0;
+}
+.select-item[data-highlighted] {
+  background: var(--accent-soft);
+}
+.select-item[data-selected] {
+  font-weight: 600;
+}
+.select-item__indicator {
+  display: inline-flex;
+  color: var(--accent);
+  visibility: hidden;
+}
+.select-item[data-selected] .select-item__indicator {
+  visibility: visible;
+}
+.select-item__indicator svg {
+  width: 16px;
+  height: 16px;
+}
+@media (forced-colors: active) {
+  .select-item[data-highlighted] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
 /* ---------- Dialog ---------- */
 
-/* components/ui/dialog.tsx. Radix portals overlay and content into <body> and
-   manages scroll lock, focus and pointer-events; this is presentation only. */
+/* components/ui/dialog.tsx and alert-dialog.tsx. Base UI portals backdrop and
+   popup into <body> and manages scroll lock, focus and aria-hidden; this is
+   presentation only. */
 .dialog-overlay {
   position: fixed;
   inset: 0;
@@ -656,7 +752,7 @@ main:focus {
   background: var(--backdrop);
   backdrop-filter: blur(2px);
 }
-.dialog-overlay[data-state="open"] {
+.dialog-overlay[data-open] {
   animation: overlay-in 0.2s var(--ease);
 }
 @keyframes overlay-in {
@@ -689,7 +785,7 @@ main:focus {
 .dialog--wide {
   width: min(760px, calc(100vw - 32px));
 }
-.dialog[data-state="open"] {
+.dialog[data-open] {
   animation: dialog-in 0.2s var(--ease);
 }
 @keyframes dialog-in {
@@ -834,14 +930,23 @@ main:focus {
   height: 16px;
 }
 
-/* ---------- Toast ---------- */
+/* ---------- Toast (components/ui/toast.tsx) ---------- */
 
-.toast {
+/* Base UI's "Notifications" landmark: positions the toast, adds no visuals. */
+.toast-viewport {
   position: fixed;
   left: 50%;
   bottom: calc(24px + env(safe-area-inset-bottom));
   z-index: 60;
   transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+.toast-viewport:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+.toast {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -856,6 +961,10 @@ main:focus {
 }
 .toast svg {
   flex: none;
+}
+.toast__title {
+  font: inherit;
+  margin: 0;
 }
 .toast--error {
   background: var(--danger);

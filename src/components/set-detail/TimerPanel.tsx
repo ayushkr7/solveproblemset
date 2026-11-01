@@ -1,6 +1,8 @@
 "use client";
 
 import { PauseIcon, PlayIcon, RestartIcon, StopIcon } from "@/components/Icons";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { formatClock, formatMinSec, formatMinutes } from "@/lib/format";
 import { currentSplitMs, elapsedMs, getStats, hasProgress } from "@/lib/timer";
 import type { ProblemSet, TimerStatus } from "@/lib/types";
@@ -22,23 +24,23 @@ const STATUS_LABEL: Record<TimerStatus, string> = {
 };
 
 function PrimaryControl({ status, actions, compact }: { status: TimerStatus; actions: TimerActions; compact?: boolean }) {
-  const size = compact ? "" : " btn--lg";
+  const size = compact ? "default" : "lg";
   if (status === "idle")
     return (
-      <button type="button" className={`btn btn--primary${size} ${styles.primary}`} onClick={actions.start}>
+      <Button variant="primary" size={size} className={styles.primary} onClick={actions.start}>
         <PlayIcon /> Start
-      </button>
+      </Button>
     );
   if (status === "running")
     return (
-      <button type="button" className={`btn btn--primary${size} ${styles.primary}`} onClick={actions.pause}>
+      <Button variant="primary" size={size} className={styles.primary} onClick={actions.pause}>
         <PauseIcon /> Pause
-      </button>
+      </Button>
     );
   return (
-    <button type="button" className={`btn btn--primary${size} ${styles.primary}`} onClick={actions.resume}>
+    <Button variant="primary" size={size} className={styles.primary} onClick={actions.resume}>
       <PlayIcon /> Resume
-    </button>
+    </Button>
   );
 }
 
@@ -75,17 +77,12 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
 
       <div className={styles.controls}>
         <PrimaryControl status={status} actions={actions} />
-        <button type="button" className={`btn ${styles.secondary}`} onClick={actions.stop} disabled={!canStop}>
+        <Button className={styles.secondary} onClick={actions.stop} disabled={!canStop}>
           <StopIcon /> Stop
-        </button>
-        <button
-          type="button"
-          className={`btn btn--danger ${styles.secondary}`}
-          onClick={actions.restart}
-          disabled={!hasProgress(set)}
-        >
+        </Button>
+        <Button variant="danger" className={styles.secondary} onClick={actions.restart} disabled={!hasProgress(set)}>
           <RestartIcon /> Restart
-        </button>
+        </Button>
       </div>
 
       <dl className={styles.stats}>
@@ -107,16 +104,7 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
           </dd>
         </div>
       </dl>
-      <div
-        className="progress"
-        role="progressbar"
-        aria-label="Completion"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={stats.percent}
-      >
-        <span className="progress__fill" style={{ width: `${stats.percent}%` }} />
-      </div>
+      <Progress value={stats.percent} aria-label="Completion" />
 
       <p className={styles.note}>
         {status === "stopped"
@@ -133,10 +121,10 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
 export function TimerDock({ set, now, actions, hidden }: { set: ProblemSet; now: number; actions: TimerActions; hidden: boolean }) {
   const { status } = set.session;
   return (
-    // `right-scroll-bar-position`: the dialog scroll lock offsets this fixed bar by the
-    // removed scrollbar's width, so it doesn't jump when a dialog opens.
+    // Base UI's dialog scroll lock keeps the scrollbar gutter (scrollbar-gutter: stable),
+    // so this fixed bar doesn't jump when a dialog opens.
     <div
-      className={`${styles.dock} right-scroll-bar-position`}
+      className={styles.dock}
       data-status={status}
       data-hidden={hidden || undefined}
       inert={hidden}
@@ -150,9 +138,9 @@ export function TimerDock({ set, now, actions, hidden }: { set: ProblemSet; now:
       </div>
       <div className={styles.dockControls}>
         {(status === "running" || status === "paused") && (
-          <button type="button" className="btn btn--icon" onClick={actions.stop} aria-label="Stop timer">
+          <Button size="icon" onClick={actions.stop} aria-label="Stop timer">
             <StopIcon />
-          </button>
+          </Button>
         )}
         <PrimaryControl status={status} actions={actions} compact />
       </div>

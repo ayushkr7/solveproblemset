@@ -1,9 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { DifficultyTicks } from "@/components/DifficultyBadge";
 import { AlertIcon, ArrowRightIcon, MinusIcon, PlusIcon } from "@/components/Icons";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldDescription, FieldError, FieldLabel, Fieldset, FieldsetLegend } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/ui/number-field";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger } from "@/components/ui/select";
+import { Toggle } from "@/components/ui/toggle";
 import { SHEETS, fetchSheetProblems } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
 import {
@@ -48,6 +62,8 @@ const RATING_PRESETS: { label: string; min: number; max: number }[] = [
   { label: "Div. 1", min: 2000, max: 2600 },
 ];
 
+const RATING_ITEMS = CF_RATINGS.map((r) => ({ value: r, label: String(r) }));
+
 function toCount(raw: string): number {
   const t = raw.trim();
   return t === "" ? 0 : Number(t);
@@ -71,7 +87,7 @@ export function CreateSetForm() {
   const [reloadKey, setReloadKey] = useState(0);
 
   const nameRef = useRef<HTMLInputElement>(null);
-  const sheetRef = useRef<HTMLFieldSetElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const countsRef = useRef<HTMLFieldSetElement>(null);
 
   const counts: DifficultyCounts = {
@@ -131,11 +147,6 @@ export function CreateSetForm() {
     setRawCounts((c) => ({ ...c, [d]: value }));
     setSubmitError(null);
   };
-  const step = (d: Difficulty, delta: number) => {
-    const current = Number.isFinite(counts[d]) ? Math.trunc(counts[d]) : 0;
-    const cap = Math.min(PER_DIFFICULTY_MAX, available?.[d] ?? PER_DIFFICULTY_MAX);
-    setCount(d, String(Math.max(0, Math.min(cap, current + delta))));
-  };
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -144,8 +155,8 @@ export function CreateSetForm() {
     const found = validate();
     if (Object.keys(found).length > 0 || !sheetId) {
       if (found.name) nameRef.current?.focus();
-      else if (found.sheetId) sheetRef.current?.querySelector("input")?.focus();
-      else countsRef.current?.querySelector<HTMLElement>("[aria-invalid='true'], input, select")?.focus();
+      else if (found.sheetId) sheetRef.current?.querySelector<HTMLElement>("[role='radio']")?.focus();
+      else countsRef.current?.querySelector<HTMLElement>("[aria-invalid='true'], [role='combobox'], input")?.focus();
       return;
     }
 
@@ -171,9 +182,9 @@ export function CreateSetForm() {
         {/* 01 — Name */}
         <section className={styles.section} aria-labelledby="sec-name">
           <SectionLabel n="01" id="sec-name" title="Name the set" />
-          <div className="field">
-            <label htmlFor="set-name" className="field__label">Problem set name</label>
-            <input
+          <Field invalid={!!errors.name}>
+            <FieldLabel>Problem set name</FieldLabel>
+            <Input
               ref={nameRef}
               id="set-name"
               className="input"
@@ -182,70 +193,67 @@ export function CreateSetForm() {
               maxLength={NAME_MAX}
               placeholder="e.g. Sliding window sprint"
               autoComplete="off"
-              aria-invalid={errors.name ? true : undefined}
-              aria-describedby="set-name-hint set-name-error"
               onChange={(e) => {
                 setName(e.target.value);
                 setSubmitError(null);
               }}
             />
             <div className={styles.fieldMeta}>
-              <span id="set-name-hint" className="field__hint">Something you&rsquo;ll recognise later.</span>
-              <span className="label tabular">{name.trim().length}/{NAME_MAX}</span>
+              <FieldDescription render={<span />}>Something you&rsquo;ll recognise later.</FieldDescription>
+              <span className="label tabular" aria-hidden="true">
+                {name.trim().length}/{NAME_MAX}
+              </span>
             </div>
-            <FieldError id="set-name-error" message={errors.name} />
-          </div>
+            <FieldError message={errors.name} />
+          </Field>
         </section>
 
         {/* 02 — Source */}
         <section className={styles.section} aria-labelledby="sec-source">
           <SectionLabel n="02" id="sec-source" title="Choose a source" />
-          <fieldset ref={sheetRef} className={styles.fieldset} aria-describedby="sheet-error">
-            <legend className="visually-hidden">Problem source</legend>
-            <div className={styles.sheets}>
-              {SHEETS.map((s) => (
-                <label key={s.id} className={styles.sheet} data-checked={sheetId === s.id || undefined}>
-                  <input
-                    type="radio"
-                    name="sheet"
-                    value={s.id}
-                    checked={sheetId === s.id}
-                    onChange={() => {
-                      setSheetId(s.id);
-                      setSubmitError(null);
-                    }}
-                    className={styles.sheetRadio}
-                  />
-                  <span className={styles.sheetTop}>
-                    <span className={styles.sheetTags}>
-                      <span className={`mono ${styles.sheetCode}`}>{s.shortName}</span>
-                      {s.kind === "live" && <span className={`label ${styles.liveTag}`}>Live</span>}
-                    </span>
-                    <span className={styles.radioDot} aria-hidden="true" />
+          <RadioGroup
+            ref={sheetRef}
+            name="sheet"
+            className={styles.sheets}
+            value={sheetId}
+            onValueChange={(value) => {
+              setSheetId(value as SheetId);
+              setSubmitError(null);
+            }}
+            aria-label="Problem source"
+            aria-describedby="sheet-error"
+          >
+            {SHEETS.map((s) => (
+              <label key={s.id} className={styles.sheet} data-checked={sheetId === s.id || undefined}>
+                <span className={styles.sheetTop}>
+                  <span className={styles.sheetTags}>
+                    <span className={`mono ${styles.sheetCode}`}>{s.shortName}</span>
+                    {s.kind === "live" && <span className={`label ${styles.liveTag}`}>Live</span>}
                   </span>
-                  <span className={styles.sheetName}>{s.name}</span>
-                  <span className={styles.sheetDesc}>{s.description}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <FieldError id="sheet-error" message={errors.sheetId} />
+                  <RadioGroupItem value={s.id} className={styles.radioDot} />
+                </span>
+                <span className={styles.sheetName}>{s.name}</span>
+                <span className={styles.sheetDesc}>{s.description}</span>
+              </label>
+            ))}
+          </RadioGroup>
+          <GroupError id="sheet-error" message={errors.sheetId} />
 
           {catalog.status === "error" && (
             <div className="notice notice--error" role="alert">
               <AlertIcon />
               <div className={styles.noticeBody}>
                 <span>{catalog.message}</span>
-                <button type="button" className="btn btn--sm" onClick={() => setReloadKey((k) => k + 1)}>
+                <Button size="sm" onClick={() => setReloadKey((k) => k + 1)}>
                   Retry
-                </button>
+                </Button>
               </div>
             </div>
           )}
 
           {hasOtherSetsForSheet && (
             <label className={styles.check}>
-              <input type="checkbox" checked={avoidUsed} onChange={(e) => setAvoidUsed(e.target.checked)} />
+              <Checkbox className={styles.checkBox} checked={avoidUsed} onCheckedChange={setAvoidUsed} />
               <span>
                 <strong>Only new problems</strong>
                 <span className="field__hint">
@@ -265,7 +273,6 @@ export function CreateSetForm() {
               min={ratingMin}
               max={ratingMax}
               rawCount={rawRatedCount}
-              count={ratedCount}
               available={ratedAvailable}
               loading={catalog.status === "loading"}
               errors={liveErrors}
@@ -283,10 +290,9 @@ export function CreateSetForm() {
             <>
               <div className={styles.presets} role="group" aria-label="Presets">
                 {PRESETS.map((p) => (
-                  <button
+                  <Button
                     key={p.label}
-                    type="button"
-                    className="btn btn--sm"
+                    size="sm"
                     onClick={() => {
                       setRawCounts({ easy: String(p.counts.easy), medium: String(p.counts.medium), hard: String(p.counts.hard) });
                       setSubmitError(null);
@@ -296,72 +302,37 @@ export function CreateSetForm() {
                     <span className={`mono ${styles.presetSpec}`}>
                       {p.counts.easy}/{p.counts.medium}/{p.counts.hard}
                     </span>
-                  </button>
+                  </Button>
                 ))}
               </div>
 
-              <fieldset ref={countsRef} className={styles.fieldset} aria-describedby="counts-error">
-                <legend className="visually-hidden">Number of problems per difficulty</legend>
+              <Fieldset ref={countsRef} className={styles.fieldset} aria-describedby="counts-error">
+                <FieldsetLegend className="visually-hidden">Number of problems per difficulty</FieldsetLegend>
                 <div className={styles.counts}>
-                  {DIFFICULTIES.map((d) => {
-                    const err = liveErrors[d];
-                    const inputId = `count-${d}`;
-                    return (
-                      <div key={d} className={`${styles.count} diff--${d}`} data-invalid={err ? "" : undefined}>
-                        <label htmlFor={inputId} className={styles.countLabel}>
+                  {DIFFICULTIES.map((d) => (
+                    <CountField
+                      key={d}
+                      id={`count-${d}`}
+                      className={`${styles.count} diff--${d}`}
+                      label={
+                        <>
                           <DifficultyTicks difficulty={d} />
                           {DIFFICULTY_LABEL[d]}
-                        </label>
-                        <div className={styles.stepper}>
-                          <button
-                            type="button"
-                            className={styles.stepBtn}
-                            onClick={() => step(d, -1)}
-                            aria-label={`Fewer ${DIFFICULTY_LABEL[d].toLowerCase()} problems`}
-                            disabled={!(counts[d] > 0)}
-                          >
-                            <MinusIcon />
-                          </button>
-                          <input
-                            id={inputId}
-                            className={`mono tabular ${styles.countInput}`}
-                            type="number"
-                            inputMode="numeric"
-                            min={0}
-                            max={PER_DIFFICULTY_MAX}
-                            step={1}
-                            value={rawCounts[d]}
-                            aria-invalid={err ? true : undefined}
-                            aria-describedby={`${inputId}-avail ${inputId}-error`}
-                            onChange={(e) => setCount(d, e.target.value)}
-                            onFocus={(e) => e.currentTarget.select()}
-                          />
-                          <button
-                            type="button"
-                            className={styles.stepBtn}
-                            onClick={() => step(d, 1)}
-                            aria-label={`More ${DIFFICULTY_LABEL[d].toLowerCase()} problems`}
-                            disabled={available ? counts[d] >= available[d] : counts[d] >= PER_DIFFICULTY_MAX}
-                          >
-                            <PlusIcon />
-                          </button>
-                        </div>
-                        <span id={`${inputId}-avail`} className={`label ${styles.avail}`}>
-                          {catalog.status === "loading" ? (
-                            <span className={`skeleton ${styles.availSkeleton}`} aria-label="Loading availability" />
-                          ) : available ? (
-                            <>of {available[d]} available</>
-                          ) : (
-                            <>pick a source</>
-                          )}
-                        </span>
-                        <FieldError id={`${inputId}-error`} message={err} />
-                      </div>
-                    );
-                  })}
+                        </>
+                      }
+                      noun={`${DIFFICULTY_LABEL[d].toLowerCase()} problems`}
+                      raw={rawCounts[d]}
+                      min={0}
+                      // + stops at what the source has; typing more shows why instead of clamping.
+                      max={Math.min(PER_DIFFICULTY_MAX, available?.[d] ?? PER_DIFFICULTY_MAX)}
+                      available={catalog.status === "loading" ? "loading" : available?.[d]}
+                      error={liveErrors[d]}
+                      onChange={(v) => setCount(d, v)}
+                    />
+                  ))}
                 </div>
-              </fieldset>
-              <FieldError id="counts-error" message={errors.counts} />
+              </Fieldset>
+              <GroupError id="counts-error" message={errors.counts} />
             </>
           )}
         </section>
@@ -408,7 +379,7 @@ export function CreateSetForm() {
             </div>
           )}
 
-          <button type="submit" className="btn btn--primary btn--lg btn--block" disabled={submitting}>
+          <Button type="submit" variant="primary" size="lg" block disabled={submitting}>
             {submitting ? (
               <>
                 <span className="spinner" aria-hidden="true" /> Fetching problems…
@@ -418,7 +389,7 @@ export function CreateSetForm() {
                 Generate set <ArrowRightIcon />
               </>
             )}
-          </button>
+          </Button>
           <p className={styles.summaryNote}>Saved to this browser. You can delete it any time.</p>
         </div>
       </aside>
@@ -434,7 +405,6 @@ function RatingFields({
   min,
   max,
   rawCount,
-  count,
   available,
   loading,
   errors,
@@ -445,16 +415,12 @@ function RatingFields({
   min: number;
   max: number;
   rawCount: string;
-  count: number;
   available: number | undefined;
   loading: boolean;
   errors: FieldErrors;
   onRange: (min: number, max: number) => void;
   onCount: (raw: string) => void;
 }) {
-  const current = Number.isFinite(count) ? Math.trunc(count) : 0;
-  const cap = Math.min(RATED_COUNT_MAX, available ?? RATED_COUNT_MAX);
-  const step = (delta: number) => onCount(String(Math.max(1, Math.min(cap, current + delta))));
   // Moving one end past the other drags the other end along, so the range is never empty.
   const ends = [
     { id: "rating-min", label: "Lowest", value: min, set: (v: number) => onRange(v, Math.max(v, max)) },
@@ -465,88 +431,61 @@ function RatingFields({
     <>
       <div className={styles.presets} role="group" aria-label="Rating presets">
         {RATING_PRESETS.map((p) => (
-          <button
+          <Toggle
             key={p.label}
-            type="button"
-            className="btn btn--sm"
-            aria-pressed={min === p.min && max === p.max}
-            onClick={() => onRange(p.min, p.max)}
+            size="sm"
+            pressed={min === p.min && max === p.max}
+            onPressedChange={() => onRange(p.min, p.max)}
           >
             {p.label}
             <span className={`mono ${styles.presetSpec}`}>
               {p.min}–{p.max}
             </span>
-          </button>
+          </Toggle>
         ))}
       </div>
 
-      <fieldset ref={fieldsetRef} className={styles.fieldset} aria-describedby="rating-hint rating-error">
-        <legend className="visually-hidden">Rating range and number of problems</legend>
+      <Fieldset ref={fieldsetRef} className={styles.fieldset} aria-describedby="rating-hint rating-error">
+        <FieldsetLegend className="visually-hidden">Rating range and number of problems</FieldsetLegend>
         <div className={styles.counts}>
           {ends.map((e) => (
             <div key={e.id} className={`${styles.count} ${styles.countRated}`} data-invalid={errors.rating ? "" : undefined}>
-              <label htmlFor={e.id} className={styles.countLabel}>
-                {e.label} rating
-              </label>
-              <select
-                id={e.id}
-                className={`mono tabular ${styles.ratingSelect}`}
-                value={e.value}
-                aria-invalid={errors.rating ? true : undefined}
-                onChange={(ev) => e.set(Number(ev.target.value))}
-              >
-                {CF_RATINGS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
+              <Select items={RATING_ITEMS} value={e.value} onValueChange={(v) => v !== null && e.set(v)}>
+                <SelectLabel className={styles.countLabel}>{e.label} rating</SelectLabel>
+                <SelectTrigger
+                  id={e.id}
+                  className={`mono tabular ${styles.ratingSelect}`}
+                  aria-invalid={errors.rating ? true : undefined}
+                />
+                <SelectContent className={styles.ratingPopup}>
+                  {CF_RATINGS.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ))}
 
-          <div className={`${styles.count} ${styles.countRated}`} data-invalid={errors.count ? "" : undefined}>
-            <label htmlFor="rated-count" className={styles.countLabel}>
-              Problems
-            </label>
-            <div className={styles.stepper}>
-              <button type="button" className={styles.stepBtn} onClick={() => step(-1)} aria-label="Fewer problems" disabled={current <= 1}>
-                <MinusIcon />
-              </button>
-              <input
-                id="rated-count"
-                className={`mono tabular ${styles.countInput}`}
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={RATED_COUNT_MAX}
-                step={1}
-                value={rawCount}
-                aria-invalid={errors.count ? true : undefined}
-                aria-describedby="rated-count-avail rated-count-error"
-                onChange={(ev) => onCount(ev.target.value)}
-                onFocus={(ev) => ev.currentTarget.select()}
-              />
-              <button type="button" className={styles.stepBtn} onClick={() => step(1)} aria-label="More problems" disabled={current >= cap}>
-                <PlusIcon />
-              </button>
-            </div>
-            <span id="rated-count-avail" className={`label ${styles.avail}`}>
-              {loading ? (
-                <span className={`skeleton ${styles.availSkeleton}`} aria-label="Loading availability" />
-              ) : available !== undefined ? (
-                <>of {available} available</>
-              ) : (
-                <>pick a source</>
-              )}
-            </span>
-            <FieldError id="rated-count-error" message={errors.count} />
-          </div>
+          <CountField
+            id="rated-count"
+            className={`${styles.count} ${styles.countRated}`}
+            label="Problems"
+            noun="problems"
+            raw={rawCount}
+            min={1}
+            max={Math.min(RATED_COUNT_MAX, available ?? RATED_COUNT_MAX)}
+            available={loading ? "loading" : available}
+            error={errors.count}
+            onChange={onCount}
+          />
         </div>
-      </fieldset>
+      </Fieldset>
       <p id="rating-hint" className="field__hint">
         Problems are spread evenly across the ratings from {ratingRange(min, max)}, lowest first.
       </p>
-      <FieldError id="rating-error" message={errors.rating} />
+      <GroupError id="rating-error" message={errors.rating} />
     </>
   );
 }
@@ -560,7 +499,74 @@ function SectionLabel({ n, id, title }: { n: string; id: string; title: string }
   );
 }
 
-function FieldError({ id, message }: { id: string; message?: string }) {
+/**
+ * A count card: Base UI Field (label, description, error wiring) around a
+ * NumberField. The − / + buttons and arrow keys step within min–max; typing is
+ * not clamped (allowOutOfRange), so a too-large number shows the reason.
+ */
+function CountField({
+  id,
+  className,
+  label,
+  noun,
+  raw,
+  min,
+  max,
+  available,
+  error,
+  onChange,
+}: {
+  id: string;
+  className: string;
+  label: ReactNode;
+  /** For the step buttons: "Fewer easy problems". */
+  noun: string;
+  raw: string;
+  min: number;
+  max: number;
+  available: number | "loading" | undefined;
+  error?: string;
+  onChange: (raw: string) => void;
+}) {
+  const value = raw.trim() === "" || !Number.isFinite(Number(raw)) ? null : Number(raw);
+  return (
+    <Field className={className} invalid={!!error}>
+      <FieldLabel className={styles.countLabel}>{label}</FieldLabel>
+      <NumberField
+        id={id}
+        value={value}
+        min={min}
+        max={max}
+        step={1}
+        allowOutOfRange
+        onValueChange={(v) => onChange(v === null ? "" : String(v))}
+      >
+        <NumberFieldGroup className={styles.stepper}>
+          <NumberFieldDecrement className={styles.stepBtn} aria-label={`Fewer ${noun}`}>
+            <MinusIcon />
+          </NumberFieldDecrement>
+          <NumberFieldInput className={`mono tabular ${styles.countInput}`} onFocus={(e) => e.currentTarget.select()} />
+          <NumberFieldIncrement className={styles.stepBtn} aria-label={`More ${noun}`}>
+            <PlusIcon />
+          </NumberFieldIncrement>
+        </NumberFieldGroup>
+      </NumberField>
+      <FieldDescription render={<span />} className={`label ${styles.avail}`}>
+        {available === "loading" ? (
+          <span className={`skeleton ${styles.availSkeleton}`} aria-label="Loading availability" />
+        ) : available !== undefined ? (
+          <>of {available} available</>
+        ) : (
+          <>pick a source</>
+        )}
+      </FieldDescription>
+      <FieldError message={error} />
+    </Field>
+  );
+}
+
+/** Error for a whole group (source, mix, range), outside any single Field. */
+function GroupError({ id, message }: { id: string; message?: string }) {
   return (
     <p id={id} className="field__error" role={message ? "alert" : undefined} hidden={!message}>
       {message && (

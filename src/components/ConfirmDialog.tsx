@@ -2,15 +2,16 @@
 
 import { useRef, type ReactNode } from "react";
 import {
-  Dialog,
-  DialogBody,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogBody,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -26,8 +27,9 @@ interface ConfirmDialogProps {
 }
 
 /**
- * Confirmation modal (role "alertdialog"). Focus starts on Cancel so a stray
- * Enter can't confirm; Esc, the close button and the backdrop all cancel.
+ * Confirmation modal (Base UI AlertDialog, role "alertdialog"). Focus starts on
+ * Cancel so a stray Enter can't confirm; Esc, the close button and Cancel all
+ * cancel. An outside click doesn't, so the choice is always deliberate.
  */
 export function ConfirmDialog({
   open,
@@ -43,29 +45,21 @@ export function ConfirmDialog({
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
-      <DialogContent role="alertdialog" eyebrow={eyebrow} initialFocus={cancelRef}>
-        <DialogBody>
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{children}</DialogDescription>
-          </DialogHeader>
-        </DialogBody>
-        <DialogFooter>
-          <DialogClose asChild>
-            <button ref={cancelRef} type="button" className="btn">
-              {cancelLabel}
-            </button>
-          </DialogClose>
-          <button
-            type="button"
-            className={`btn ${tone === "danger" ? "btn--danger-solid" : "btn--primary"}`}
-            onClick={onConfirm}
-          >
+    <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <AlertDialogContent eyebrow={eyebrow} initialFocus={cancelRef}>
+        <AlertDialogBody>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{title}</AlertDialogTitle>
+            <AlertDialogDescription>{children}</AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogBody>
+        <AlertDialogFooter>
+          <AlertDialogCancel ref={cancelRef}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction variant={tone === "danger" ? "danger-solid" : "primary"} onClick={onConfirm}>
             {confirmLabel}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

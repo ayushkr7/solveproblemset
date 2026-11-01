@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AlertIcon, ArrowLeftIcon, InfoIcon, TrashIcon } from "@/components/Icons";
+import { Button } from "@/components/ui/button";
 import { getSheet } from "@/data/sheets";
 import { useNow } from "@/hooks/useNow";
 import { useProblemSet } from "@/hooks/useProblemSets";
@@ -212,9 +213,9 @@ function Unreadable({ id }: { id: string }) {
         a new set.
       </p>
       <div className={styles.stateActions}>
-        <button type="button" className="btn btn--danger" onClick={() => setConfirm(true)}>
+        <Button variant="danger" onClick={() => setConfirm(true)}>
           <TrashIcon /> Remove damaged set
-        </button>
+        </Button>
         <Link href="/sets" className="btn">Back to sets</Link>
       </div>
       <ConfirmDialog
