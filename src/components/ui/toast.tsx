@@ -11,8 +11,13 @@
  */
 import { Toast as ToastPrimitive } from "@base-ui/react/toast";
 import { useMemo } from "react";
-import { AlertIcon, CheckIcon } from "@/components/Icons";
+import { AlertIcon, CheckIcon, ExternalIcon } from "@/components/Icons";
 import { cn } from "@/lib/utils";
+
+/** An optional link after the message, opened in a new tab. */
+interface ToastData {
+  link?: { href: string; label: string };
+}
 
 /** One message at a time: a new toast replaces the current one. */
 function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -20,7 +25,7 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 function Toaster() {
-  const { toasts } = ToastPrimitive.useToastManager();
+  const { toasts } = ToastPrimitive.useToastManager<ToastData>();
   return (
     <ToastPrimitive.Portal>
       <ToastPrimitive.Viewport data-slot="toast-viewport" className="toast-viewport">
@@ -28,6 +33,12 @@ function Toaster() {
           <ToastPrimitive.Root key={t.id} toast={t} data-slot="toast" className={cn("toast", t.type === "error" && "toast--error")}>
             {t.type === "error" ? <AlertIcon width={16} height={16} /> : <CheckIcon width={16} height={16} />}
             <ToastPrimitive.Title data-slot="toast-title" className="toast__title" />
+            {t.data?.link && (
+              <a className="toast__link" href={t.data.link.href} target="_blank" rel="noopener noreferrer">
+                {t.data.link.label} <ExternalIcon width={14} height={14} />
+                <span className="visually-hidden"> (opens in a new tab)</span>
+              </a>
+            )}
           </ToastPrimitive.Root>
         ))}
       </ToastPrimitive.Viewport>
@@ -35,12 +46,13 @@ function Toaster() {
   );
 }
 
-/** `toast.success(message)` / `toast.error(message)`. */
+/** `toast.success(message, link?)` / `toast.error(message)`. A toast with a link stays up longer, so there's time to use it. */
 function useToast() {
-  const manager = ToastPrimitive.useToastManager();
+  const manager = ToastPrimitive.useToastManager<ToastData>();
   return useMemo(
     () => ({
-      success: (title: string) => manager.add({ title, type: "success", timeout: 3200 }),
+      success: (title: string, link?: ToastData["link"]) =>
+        manager.add({ title, type: "success", timeout: link ? 8000 : 3200, data: link ? { link } : undefined }),
       error: (title: string) => manager.add({ title, type: "error", timeout: 6000, priority: "high" }),
     }),
     [manager],
