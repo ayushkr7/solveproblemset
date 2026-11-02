@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
 import { AlertIcon, CloudIcon, InfoIcon, UploadIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
@@ -565,7 +566,7 @@ function FormatGuideDialog({
                 <li>
                   From Google Drive you can import an .xlsx workbook or a Google Sheet laid out the same way. Exports to Drive
                   are saved in a “{DRIVE_FOLDER_NAME}” folder in My Drive. This app can only see files it saved there and
-                  files you pick.
+                  files you pick. See the <Link href="/privacy#google-drive">Privacy Policy</Link> for how Drive access is used.
                 </li>
               )}
             </ul>

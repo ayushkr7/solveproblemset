@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DifficultyBadge, DifficultyTicks } from "@/components/DifficultyBadge";
 import { ArrowRightIcon } from "@/components/Icons";
 import { SHEETS } from "@/data/sheets";
+import { DRIVE_ENABLED } from "@/lib/drive/config";
 import { countByDifficulty } from "@/lib/generate";
 import type { Difficulty } from "@/lib/types";
 import styles from "./landing.module.css";
@@ -28,7 +29,9 @@ const FEATURES = [
   {
     n: "04",
     title: "Persistent & private",
-    body: "Refresh, close the tab, come back next week. Progress and the running clock are saved in your browser, never uploaded.",
+    body: DRIVE_ENABLED
+      ? "Refresh, close the tab, come back next week. Progress and the running clock are saved in your browser, never on our servers. Back up to a file or your own Google Drive when you choose."
+      : "Refresh, close the tab, come back next week. Progress and the running clock are saved in your browser, never uploaded.",
     spec: "localStorage · no account",
   },
 ];
