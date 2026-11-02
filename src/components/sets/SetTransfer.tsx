@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
-import { AlertIcon, InfoIcon, UploadIcon } from "@/components/Icons";
+import { AlertIcon, CloudIcon, InfoIcon, UploadIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
+import { DRIVE_ENABLED, DRIVE_FOLDER_NAME, DriveError, pickDriveWorkbook, readDriveWorkbook } from "@/lib/drive/transfer";
 import { formatClock, plural } from "@/lib/format";
 import { applyPlan, planErrors, planImport, type PlanAction, type PlanItem, type PlanOutcome } from "@/lib/excel/plan";
 import {
@@ -31,11 +33,12 @@ import {
   XLSX_EXTENSION,
   type SheetSpec,
 } from "@/lib/excel/schema";
-import { XLSX_ACCEPT, preloadXlsx, readWorkbookFile, type ImportedSet } from "@/lib/excel/transfer";
+import { XLSX_ACCEPT, preloadXlsx, readWorkbookFile, type ImportResult, type ImportedSet } from "@/lib/excel/transfer";
 import { getListSnapshot, saveNewSets } from "@/lib/problem-sets";
 import { StorageWriteError } from "@/lib/storage";
 import { elapsedMs, getStats } from "@/lib/timer";
 import type { ProblemSet } from "@/lib/types";
+import { TransferMenu, type TransferLocation } from "./TransferMenu";
 import styles from "./SetTransfer.module.css";
 
 interface Preview {
@@ -52,7 +55,8 @@ interface Results extends PlanOutcome {
 
 /**
  * "Import sets" + format-guide button, and the import flow:
- * file → validate → preview & resolve name conflicts → save atomically → results.
+ * file (this device or Google Drive) → validate → preview & resolve name
+ * conflicts → save atomically → results.
  * Each step is a dialog; closing any of them returns focus to "Import sets".
  */
 /** `onImported` runs when the results summary is dismissed (the sets are saved before that). */
@@ -61,26 +65,53 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
   const fileRef = useRef<HTMLInputElement>(null);
   const busy = useRef(false);
   const [reading, setReading] = useState(false);
-  const [invalid, setInvalid] = useState<{ fileName: string; errors: string[] } | null>(null);
+  const [invalid, setInvalid] = useState<{ fileName: string; errors: string[]; source: TransferLocation } | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [results, setResults] = useState<Results | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const toast = useToast();
 
   // focusableWhenDisabled: a natively disabled button drops keyboard focus,
   // leaving nothing for the dialogs to return focus to.
   const unavailable = reading || preview !== null;
-  const chooseFile = () => {
-    if (!busy.current) fileRef.current?.click();
+  const chooseFile = (source: TransferLocation = "device") => {
+    if (busy.current) return;
+    if (source === "drive") void handleDrive();
+    else fileRef.current?.click();
   };
+
+  function showResult(fileName: string, source: TransferLocation, result: ImportResult) {
+    if (result.ok) setPreview({ fileName, format: result.format, sets: result.sets, warnings: result.warnings });
+    else setInvalid({ fileName, errors: result.errors, source });
+  }
 
   async function handleFile(file: File) {
     if (busy.current) return; // one import at a time
     busy.current = true;
     setReading(true);
     try {
-      const result = await readWorkbookFile(file);
-      if (result.ok) setPreview({ fileName: file.name, format: result.format, sets: result.sets, warnings: result.warnings });
-      else setInvalid({ fileName: file.name, errors: result.errors });
+      showResult(file.name, "device", await readWorkbookFile(file));
+    } finally {
+      busy.current = false;
+      setReading(false);
+    }
+  }
+
+  /** Sign in (popup) → Google Picker → download → validate. Must start from a click. */
+  async function handleDrive() {
+    if (busy.current) return;
+    busy.current = true;
+    preloadXlsx();
+    try {
+      const picked = await pickDriveWorkbook();
+      // Picker leaves focus on <body> when it closes.
+      if (document.activeElement === document.body) importRef.current?.focus();
+      if (!picked) return;
+      setReading(true);
+      showResult(picked.name, "drive", await readDriveWorkbook(picked));
+    } catch (err) {
+      if (!(err instanceof DriveError)) toast.error("The workbook couldn’t be read from Google Drive. Try again.");
+      else if (err.kind !== "cancelled") toast.error(err.message);
     } finally {
       busy.current = false;
       setReading(false);
@@ -90,18 +121,18 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
   return (
     <>
       <div className={styles.importGroup}>
-        <Button
-          ref={importRef}
-          onClick={chooseFile}
-          onPointerEnter={preloadXlsx}
-          onFocus={preloadXlsx}
-          disabled={unavailable}
-          focusableWhenDisabled
-          aria-busy={reading || undefined}
+        <TransferMenu
+          triggerRef={importRef}
+          onSelect={chooseFile}
+          onPreload={preloadXlsx}
+          busy={unavailable}
+          pending={reading}
+          deviceItem={<><UploadIcon /> From this device…</>}
+          driveItem={<><CloudIcon /> From Google Drive…</>}
         >
           {reading ? <span className="spinner" aria-hidden="true" /> : <UploadIcon />}
           {reading ? "Reading…" : "Import sets"}
-        </Button>
+        </TransferMenu>
         <FormatGuideDialog
           open={guideOpen}
           onOpenChange={setGuideOpen}
@@ -158,10 +189,10 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
                   variant="primary"
                   onClick={() => {
                     setInvalid(null);
-                    chooseFile();
+                    chooseFile(invalid.source);
                   }}
                 >
-                  <UploadIcon /> Choose another file
+                  {invalid.source === "drive" ? <CloudIcon /> : <UploadIcon />} Choose another file
                 </Button>
               </DialogFooter>
             </>
@@ -530,6 +561,13 @@ function FormatGuideDialog({
               <li>Imported timers are never running. A timer that was running at export is saved as Paused.</li>
               <li>Up to {MAX_SETS} sets per file and {MAX_PROBLEMS} problems per set; files up to {MAX_FILE_BYTES / 1024 / 1024} MB. Blank rows are skipped.</li>
               <li>Files in the earlier single-set format (ProblemSet, Problems and Session worksheets) can still be imported.</li>
+              {DRIVE_ENABLED && (
+                <li>
+                  From Google Drive you can import an .xlsx workbook or a Google Sheet laid out the same way. Exports to Drive
+                  are saved in a “{DRIVE_FOLDER_NAME}” folder in My Drive. This app can only see files it saved there and
+                  files you pick.
+                </li>
+              )}
             </ul>
           </section>
         </DialogBody>

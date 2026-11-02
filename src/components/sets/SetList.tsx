@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   ArrowRightIcon,
+  CloudIcon,
   DownloadIcon,
   PlusIcon,
   TrashIcon,
@@ -15,13 +16,33 @@ import { Progress } from "@/components/ui/progress";
 import { ToastProvider, Toaster, useToast } from "@/components/ui/toast";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
+import {
+  DRIVE_FOLDER_NAME,
+  DriveError,
+  saveProblemSetsToDrive,
+} from "@/lib/drive/transfer";
 import { downloadProblemSets, preloadXlsx } from "@/lib/excel/transfer";
 import { formatDate, formatDateTime, plural } from "@/lib/format";
 import { deleteSet, getListSnapshot } from "@/lib/problem-sets";
 import { getStats } from "@/lib/timer";
 import type { ProblemSet } from "@/lib/types";
 import { ImportSets } from "./SetTransfer";
+import { TransferMenu, type TransferLocation } from "./TransferMenu";
 import styles from "./SetList.module.css";
+
+/** The export menus' items (shown when Google Drive is configured). */
+const EXPORT_ITEMS = {
+  deviceItem: (
+    <>
+      <DownloadIcon /> Download to this device
+    </>
+  ),
+  driveItem: (
+    <>
+      <CloudIcon /> Save to Google Drive
+    </>
+  ),
+};
 
 /** What an export covers: everything, the selection, or one card's set. */
 type ExportTarget = "all" | "selected" | `set:${string}`;
@@ -68,8 +89,11 @@ function SetListPage() {
       return next;
     });
 
-  /** Download sets as one .xlsx. Read-only: stored sets and running timers are untouched. */
-  async function runExport(target: ExportTarget) {
+  /**
+   * Download sets as one .xlsx, or save it to Google Drive. Read-only: stored
+   * sets and running timers are untouched.
+   */
+  async function runExport(target: ExportTarget, location: TransferLocation) {
     if (exporting.current) return;
     // Read from storage at click time, in display order.
     const all = getListSnapshot();
@@ -89,19 +113,35 @@ function SetListPage() {
     }
     exporting.current = true;
     setExportTarget(target);
+    const what =
+      chosen.length === 1
+        ? `“${chosen[0]!.name}”`
+        : plural(chosen.length, "set");
     try {
-      const fileName = await downloadProblemSets(chosen, {
-        all: target === "all",
-      });
-      const what =
-        chosen.length === 1
-          ? `“${chosen[0]!.name}”`
-          : plural(chosen.length, "set");
-      toast.success(`Exported ${what} as ${fileName}`);
-    } catch {
-      toast.error(
-        "The Excel file couldn’t be created. Check your connection and try again.",
-      );
+      if (location === "drive") {
+        const file = await saveProblemSetsToDrive(chosen, {
+          all: target === "all",
+        });
+        toast.success(
+          `Saved ${what} to Google Drive as ${file.name} in “${DRIVE_FOLDER_NAME}”`,
+          file.webViewLink
+            ? { href: file.webViewLink, label: "Open in Drive" }
+            : undefined,
+        );
+      } else {
+        const fileName = await downloadProblemSets(chosen, {
+          all: target === "all",
+        });
+        toast.success(`Exported ${what} as ${fileName}`);
+      }
+    } catch (err) {
+      if (err instanceof DriveError) {
+        if (err.kind !== "cancelled") toast.error(err.message);
+      } else {
+        toast.error(
+          "The Excel file couldn’t be created. Check your connection and try again.",
+        );
+      }
     } finally {
       exporting.current = false;
       setExportTarget(null);
@@ -203,14 +243,14 @@ function SetListPage() {
               }}
             />
             {/* While an export runs the buttons stay focusable (aria-disabled), so focus isn't lost. */}
-            <Button
+            <TransferMenu
               className={styles.exportSelected}
-              onClick={() => void runExport("selected")}
-              onPointerEnter={preloadXlsx}
-              onFocus={preloadXlsx}
-              disabled={selectedCount === 0 || exportTarget !== null}
-              focusableWhenDisabled={selectedCount > 0}
-              aria-busy={exportTarget === "selected" || undefined}
+              onSelect={(where) => void runExport("selected", where)}
+              onPreload={preloadXlsx}
+              disabled={selectedCount === 0}
+              busy={exportTarget !== null}
+              pending={exportTarget === "selected"}
+              {...EXPORT_ITEMS}
             >
               {busyIcon("selected")} Export selected
               {selectedCount > 0 && (
@@ -218,18 +258,18 @@ function SetListPage() {
                   {selectedCount}
                 </span>
               )}
-            </Button>
-            <Button
+            </TransferMenu>
+            <TransferMenu
               className={styles.exportAll}
-              onClick={() => void runExport("all")}
-              onPointerEnter={preloadXlsx}
-              onFocus={preloadXlsx}
-              disabled={sets.length === 0 || exportTarget !== null}
-              focusableWhenDisabled={sets.length > 0}
-              aria-busy={exportTarget === "all" || undefined}
+              onSelect={(where) => void runExport("all", where)}
+              onPreload={preloadXlsx}
+              disabled={sets.length === 0}
+              busy={exportTarget !== null}
+              pending={exportTarget === "all"}
+              {...EXPORT_ITEMS}
             >
               {busyIcon("all")} Export all
-            </Button>
+            </TransferMenu>
           </div>
         </div>
       )}
@@ -272,7 +312,7 @@ function SetListPage() {
               scrollIntoView={s.id === firstHighlighted}
               exporting={exportTarget === `set:${s.id}`}
               exportDisabled={exportTarget !== null}
-              onExport={() => void runExport(`set:${s.id}`)}
+              onExport={(where) => void runExport(`set:${s.id}`, where)}
               onDelete={() => setPendingDelete(s)}
             />
           ))}
@@ -317,7 +357,7 @@ interface SetCardProps {
   scrollIntoView: boolean;
   exporting: boolean;
   exportDisabled: boolean;
-  onExport: () => void;
+  onExport: (location: TransferLocation) => void;
   onDelete: () => void;
 }
 
@@ -443,14 +483,15 @@ function SetCard({
           >
             <TrashIcon /> Delete
           </Button>
-          <Button
+          <TransferMenu
             size="sm"
             variant="ghost"
-            onClick={onExport}
-            disabled={exportDisabled}
-            focusableWhenDisabled
-            aria-busy={exporting || undefined}
+            onSelect={onExport}
+            onPreload={preloadXlsx}
+            busy={exportDisabled}
+            pending={exporting}
             aria-label={`Export ${set.name} to Excel`}
+            {...EXPORT_ITEMS}
           >
             {exporting ? (
               <span className="spinner" aria-hidden="true" />
@@ -458,7 +499,7 @@ function SetCard({
               <DownloadIcon />
             )}{" "}
             Export
-          </Button>
+          </TransferMenu>
         </div>
         <Link
           href={`/sets/${set.id}`}

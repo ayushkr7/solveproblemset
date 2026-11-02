@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import logoSvg from "@/app/graph-icon.svg?raw";
 import { ThemeToggle } from "./ThemeToggle";
 import styles from "./SiteHeader.module.css";
 
@@ -13,12 +14,12 @@ const NAV = [
 export function Logo() {
   return (
     <span className={styles.logo}>
-      <svg className={styles.mark} viewBox="0 0 28 28" aria-hidden="true">
-        <rect x="1" y="1" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M14 1v26M1 14h26" stroke="currentColor" strokeWidth="0.75" opacity="0.45" />
-        <circle cx="14" cy="14" r="5.5" fill="none" stroke="var(--accent)" strokeWidth="1.5" />
-        <path d="M14 8.5v11M8.5 14h11" stroke="var(--accent)" strokeWidth="1.5" />
-      </svg>
+      {/* Inlined (not <img>) so the mark follows the site theme, not the OS one. */}
+      <span
+        className={styles.mark}
+        aria-hidden="true"
+        dangerouslySetInnerHTML={{ __html: logoSvg }}
+      />
       <span className={styles.word}>
         Solve<span className={styles.slash}>/</span>Problemset
       </span>
@@ -31,12 +32,18 @@ export function SiteHeader() {
   return (
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
-        <Link href="/" className={styles.home} aria-label="Solve Problemset — home">
+        <Link
+          href="/"
+          className={styles.home}
+          aria-label="Solve Problemset — home"
+        >
           <Logo />
         </Link>
         <nav aria-label="Main" className={styles.nav}>
           {NAV.map((item) => {
-            const active = pathname === item.href || (item.href === "/sets" && pathname.startsWith("/sets/"));
+            const active =
+              pathname === item.href ||
+              (item.href === "/sets" && pathname.startsWith("/sets/"));
             return (
               <Link
                 key={item.href}

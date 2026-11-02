@@ -18,7 +18,7 @@ src/
     api/sources/          GET /api/sources/leetcode, /api/sources/codeforces (server-side fetch + cache)
   components/             shared UI (header, theme toggle, confirm dialog, badges)
     ui/                   shadcn/ui-style components on Base UI (@base-ui/react): button, dialog,
-                          alert-dialog, checkbox, radio-group, number-field, select, toggle, toast,
+                          alert-dialog, checkbox, dropdown-menu, radio-group, number-field, select, toggle, toast,
                           progress, field, input. Styled by globals.css tokens, not Tailwind; use
                           these instead of native controls or new primitives
     create/               problem-set form
@@ -38,7 +38,8 @@ src/
     sources/              live sources: leetcode.ts, codeforces.ts (fetch + quality filter), cache.ts, serve.ts
     storage.ts, theme.ts, format.ts, types.ts
     excel/                .xlsx import/export (see below)
-tests/                    timer, excel, sources (bundled sheets), live-sources
+    drive/                Google Drive import/export (see below)
+tests/                    timer, excel, drive, sources (bundled sheets), live-sources
 ```
 
 ## Timing model
@@ -67,6 +68,34 @@ Single-set files in format 1 (`ProblemSet` / `Problems` / `Session` worksheets) 
 - `import.ts` validates the whole workbook up front: one bad row rejects the file. `plan.ts` decides what happens to each set (import, rename or skip) when names clash with saved sets or with each other. `export.ts` builds the workbook. All three are pure and unit-tested.
 - `xlsx.ts` is the only code that uses ExcelJS, which is loaded on demand. `transfer.ts` handles the browser side (file checks, download).
 - Importing shows a preview first. Saving goes through `saveNewSets`, which writes every set or none: if any write fails, the sets already written are removed. Each imported set gets a new id, so existing sets are never overwritten. Imported timers are never running.
+
+## Google Drive
+
+When Google credentials are configured, Import sets and each Export button open a menu: this device, or Google Drive.
+
+- **Export to Drive** uploads the same `.xlsx` into a `Solve Problemset` folder in My Drive. The folder is created on first use. A file with the same name is never replaced; Drive keeps both. The toast links to the new file.
+- **Import from Drive** opens Google Picker. You can pick an `.xlsx` or a Google Sheet; a Sheet is converted to `.xlsx` by Drive. The file then goes through the same validation, preview and atomic save as a local file.
+- Everything runs in the browser. Google Identity Services opens a sign-in popup and gives an access token that is kept in memory only, so reloading the page signs you out of Drive. The only scope is `drive.file`, which reaches just the files the app creates or that you pick.
+- `lib/drive/files.ts` holds the Drive REST calls (unit-tested with a stub `fetch`). `google.ts` loads Google's scripts on demand and handles sign-in and Picker. `transfer.ts` connects both to the Excel code. `components/sets/TransferMenu.tsx` is the device-or-Drive button.
+
+Without credentials the menus are hidden and the buttons work with local files only, as before.
+
+### Setup
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create a project and enable the **Google Drive API** and the **Google Picker API**.
+2. Configure the OAuth consent screen (Google Auth Platform): choose External and add the `https://www.googleapis.com/auth/drive.file` scope. It is a non-sensitive scope, so the app doesn't need Google's verification. While the app is in Testing, only the test users you add can sign in.
+3. Create an **OAuth client ID** of type *Web application*. Under Authorized JavaScript origins, add `http://localhost:3000` and your production origin. You don't need redirect URIs.
+4. Create an **API key**. Restrict it to the Google Picker API, and to your origins as HTTP referrers.
+5. Set these at build time, in `.env.local` locally or in the build environment for `npm run deploy`. `NEXT_PUBLIC_*` values are inlined into the client bundle when it is built:
+
+```bash
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=123456789012-abc….apps.googleusercontent.com
+NEXT_PUBLIC_GOOGLE_API_KEY=AIza…
+# Optional: the Cloud project number, which Picker needs. By default it is read from the client ID's prefix.
+# NEXT_PUBLIC_GOOGLE_APP_ID=123456789012
+```
+
+Google sign-in only works from origins registered on the client. A LAN address such as `http://192.168.x.x:3000` can't be registered, so test Drive on `localhost`.
 
 ## Problem data
 
