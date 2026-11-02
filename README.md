@@ -97,6 +97,21 @@ NEXT_PUBLIC_GOOGLE_API_KEY=AIza…
 
 Google sign-in only works from origins registered on the client. A LAN address such as `http://192.168.x.x:3000` can't be registered, so test Drive on `localhost`.
 
+### Publishing (consent screen branding)
+
+Before switching the app from Testing to In production, fill in the consent screen's Branding page with the values in `src/lib/site.ts`:
+
+| Field | Value |
+|---|---|
+| App name | Solve Problemset |
+| User support email / developer contact | support@solveproblemset.com |
+| Application home page | https://solveproblemset.com |
+| Application privacy policy link | https://solveproblemset.com/privacy |
+| Application terms of service link | https://solveproblemset.com/terms |
+| Authorized domains | solveproblemset.com |
+
+The privacy policy (`src/app/privacy/page.tsx`) describes, in plain terms, what the app does with Drive: access limited to files it saves or the person picks, no server-side copies, no sharing, and Google's required Limited Use statement. If the Drive code changes what it accesses, stores or sends, update the policy and `LEGAL_UPDATED` in `src/lib/site.ts` in the same change. Every page links to both policies from the footer.
+
 ## Problem data
 
 None of the sheets has a public API, so each is bundled as its own file in `data/`. Those three files are the source of truth: Striver A2Z (431 problems), Striver 180 (179) and NeetCode Blind 75 (75). Each problem links to the sheet's own practice page (takeUforward or NeetCode) and, where there is one, to LeetCode. `data/problems.ts` maps the rows onto `CatalogProblem`. Problem ids are slugs from the problem links (the takeUforward slug for Striver, the LeetCode slug for Blind 75), so they stay stable if a sheet is reordered.

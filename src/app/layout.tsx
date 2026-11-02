@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter_Tight, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SITE } from "@/lib/site";
 import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
@@ -16,6 +17,7 @@ const instrument = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE.url),
   title: { default: "Solve Problemset — practice, measured", template: "%s · Solve Problemset" },
   description:
     "Build personalised DSA practice sets from Striver's sheets, NeetCode's Blind 75, LeetCode and Codeforces, time every problem, and pick up exactly where you left off.",
