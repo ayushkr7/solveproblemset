@@ -21,6 +21,7 @@
 
 .logo { display: inline-flex; align-items: center; gap: 10px; }
 .mark { width: 26px; height: 26px; flex: none; }
+.mark > svg { display: block; width: 100%; height: 100%; }
 .word {
   font-family: var(--font-mono);
   font-size: 0.8125rem;

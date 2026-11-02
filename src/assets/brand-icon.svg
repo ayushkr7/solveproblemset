@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .tile { fill: #1f4fd1; }
+    .grid { stroke: #f8f6f0; opacity: .14; }
+    .crop { stroke: #f8f6f0; opacity: .6; }
+    .tick { stroke: #f8f6f0; }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #7ea9ff; }
+      .grid { stroke: #07101e; opacity: .12; }
+      .crop { stroke: #07101e; opacity: .55; }
+      .tick { stroke: #07101e; }
+    }
+  </style>
+  <!-- blueprint tile -->
+  <rect class="tile" width="32" height="32" rx="7"/>
+  <!-- faint drafting grid -->
+  <path class="grid" d="M12 0v32M20 0v32M0 12h32M0 20h32" stroke-width="1" fill="none"/>
+  <!-- crop marks: the "measured" frame -->
+  <path class="crop" d="M7 11V7h4M7 21v4h4M25 21v4h-4" stroke-width="2" fill="none"/>
+  <!-- solved: a check whose long stroke is the brand slash, breaking out of the frame -->
+  <path class="tick" d="M9.5 16.5l4 4L24.5 7.5" stroke-width="3.25" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+</svg>

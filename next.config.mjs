@@ -12,7 +12,14 @@ const lanAddresses = Object.values(networkInterfaces())
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  turbopack: { root: process.cwd() },
+  turbopack: {
+    root: process.cwd(),
+    rules: {
+      // `import svg from "./file.svg?raw"` yields the markup as a string, so an
+      // SVG can be inlined and themed with the page's CSS variables.
+      "*.svg": { condition: { query: /[?&]raw(?=&|$)/ }, type: "raw" },
+    },
+  },
   allowedDevOrigins: lanAddresses,
 };
 
