@@ -54,7 +54,8 @@
 .long { display: none; }
 .divider { width: 1px; height: 24px; margin: 0 8px; background: var(--rule); }
 
-@media (max-width: 379px) {
+/* Mobile: the mark only; the home link's aria-label still names the site. */
+@media (max-width: 639px) {
   .word { display: none; }
 }
 
