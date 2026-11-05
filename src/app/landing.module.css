@@ -65,6 +65,7 @@
 .specs > div {
   padding: 12px 24px 0 0;
   display: grid;
+  align-content: start;
   gap: 2px;
 }
 .specs > div + div {
@@ -73,6 +74,10 @@
 }
 .specs dd {
   font-size: 0.9375rem;
+}
+/* On narrow screens, break between phrases rather than inside them. */
+.specs dd > span {
+  white-space: nowrap;
 }
 
 @media (max-width: 479px) {
@@ -585,13 +590,14 @@
   padding-top: 12px;
   display: grid;
   gap: 4px;
+  justify-content: center;
 }
 .sourceCounts > div + div {
-  padding-left: 12px;
   border-left: 1px solid var(--rule);
 }
 .sourceCounts dt {
   display: flex;
+  justify-content: center;
   gap: 6px;
   align-items: center;
   color: var(--diff-fg, var(--ink-3));
@@ -599,6 +605,7 @@
 .sourceCounts dd {
   font-size: 1.5rem;
   font-weight: 500;
+  text-align: center;
 }
 .sourceTick {
   display: inline-flex;

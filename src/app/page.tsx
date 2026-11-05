@@ -95,18 +95,17 @@ export default async function LandingPage() {
           <div className={styles.heroCopy}>
             <p className={`label ${styles.kicker}`}>
               <span className={styles.kickerDot} aria-hidden="true" />
-              Sheet 01 — A practice system for DSA &amp; CP
+              For coding interviews &amp; contests
             </p>
             <h1 id="hero-title" className={styles.heroTitle}>
-              Practice,
+              Solve on
               <br />
-              <span className="serif-accent">measured.</span>
+              <span className="serif-accent">the clock.</span>
             </h1>
             <p className={styles.heroLede}>
-              Turn Striver&rsquo;s sheets, NeetCode&rsquo;s Blind 75, LeetCode
-              and Codeforces into focused, personalised problem sets. Time every
-              solve, pause without penalty, and pick up exactly where you left
-              off.
+              Generate practice sets from curated DSA sheets, LeetCode or
+              Codeforces by difficulty or rating, and track the time spent on
+              each problem.
             </p>
             <div className={styles.ctaRow}>
               <Link href="/create" className="btn btn--primary btn--lg">
@@ -120,15 +119,18 @@ export default async function LandingPage() {
               <div>
                 <dt className="label">Sources</dt>
                 <dd className="mono">
-                  {sheets.length} sheets · {live.length} live
+                  <span>{sheets.length} sheets,</span>{" "}
+                  <span>{live.map((s) => s.shortName).join(", ")}</span>
                 </dd>
               </div>
               <div>
-                <dt className="label">Tiers</dt>
-                <dd className="mono">E · M · H</dd>
+                <dt className="label">Timing</dt>
+                <dd className="mono">
+                  <span>Per problem</span>
+                </dd>
               </div>
               <div>
-                <dt className="label">Accounts</dt>
+                <dt className="label">Sign-up</dt>
                 <dd className="mono">None</dd>
               </div>
             </dl>
