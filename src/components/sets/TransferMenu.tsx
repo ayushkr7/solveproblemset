@@ -3,7 +3,12 @@
 import { useState, type ReactNode, type Ref } from "react";
 import { ChevronDownIcon } from "@/components/Icons";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DRIVE_ENABLED, preloadDrive } from "@/lib/drive/transfer";
 
 export type TransferLocation = "device" | "drive";

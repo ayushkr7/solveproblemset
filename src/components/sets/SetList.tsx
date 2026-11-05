@@ -3,24 +3,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import {
-  ArrowRightIcon,
-  CloudIcon,
-  DownloadIcon,
-  PlusIcon,
-  TrashIcon,
-} from "@/components/Icons";
+import { ArrowRightIcon, CloudIcon, DownloadIcon, PlusIcon, TrashIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import { LabeledCheckbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { ToastProvider, Toaster, useToast } from "@/components/ui/toast";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
-import {
-  DRIVE_FOLDER_NAME,
-  DriveError,
-  saveProblemSetsToDrive,
-} from "@/lib/drive/transfer";
+import { DRIVE_FOLDER_NAME, DriveError, saveProblemSetsToDrive } from "@/lib/drive/transfer";
 import { downloadProblemSets, preloadXlsx } from "@/lib/excel/transfer";
 import { formatDate, formatDateTime, plural } from "@/lib/format";
 import { deleteSet, getListSnapshot } from "@/lib/problem-sets";
@@ -60,14 +50,10 @@ function SetListPage() {
   const sets = useProblemSets();
   const toast = useToast();
   const [pendingDelete, setPendingDelete] = useState<ProblemSet | null>(null);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [exportTarget, setExportTarget] = useState<ExportTarget | null>(null);
   const exporting = useRef(false);
-  const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
+  const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(() => new Set());
 
   useEffect(() => {
     if (highlightIds.size === 0) return;
@@ -77,8 +63,7 @@ function SetListPage() {
 
   // Selection only counts sets that are still displayed (others may be deleted, e.g. in another tab).
   const selectedCount = sets?.filter((s) => selected.has(s.id)).length ?? 0;
-  const allSelected =
-    !!sets && sets.length > 0 && selectedCount === sets.length;
+  const allSelected = !!sets && sets.length > 0 && selectedCount === sets.length;
   const firstHighlighted = sets?.find((s) => highlightIds.has(s.id))?.id;
 
   const toggle = (id: string, on: boolean) =>
@@ -104,19 +89,12 @@ function SetListPage() {
           ? all.filter((s) => selected.has(s.id))
           : all.filter((s) => `set:${s.id}` === target);
     if (chosen.length === 0) {
-      toast.error(
-        target === "all"
-          ? "There are no sets to export yet."
-          : "Select at least one set to export.",
-      );
+      toast.error(target === "all" ? "There are no sets to export yet." : "Select at least one set to export.");
       return;
     }
     exporting.current = true;
     setExportTarget(target);
-    const what =
-      chosen.length === 1
-        ? `“${chosen[0]!.name}”`
-        : plural(chosen.length, "set");
+    const what = chosen.length === 1 ? `“${chosen[0]!.name}”` : plural(chosen.length, "set");
     try {
       if (location === "drive") {
         const file = await saveProblemSetsToDrive(chosen, {
@@ -124,9 +102,7 @@ function SetListPage() {
         });
         toast.success(
           `Saved ${what} to Google Drive as ${file.name} in “${DRIVE_FOLDER_NAME}”`,
-          file.webViewLink
-            ? { href: file.webViewLink, label: "Open in Drive" }
-            : undefined,
+          file.webViewLink ? { href: file.webViewLink, label: "Open in Drive" } : undefined,
         );
       } else {
         const fileName = await downloadProblemSets(chosen, {
@@ -138,9 +114,7 @@ function SetListPage() {
       if (err instanceof DriveError) {
         if (err.kind !== "cancelled") toast.error(err.message);
       } else {
-        toast.error(
-          "The Excel file couldn’t be created. Check your connection and try again.",
-        );
+        toast.error("The Excel file couldn’t be created. Check your connection and try again.");
       }
     } finally {
       exporting.current = false;
@@ -159,11 +133,7 @@ function SetListPage() {
   );
 
   const busyIcon = (target: ExportTarget) =>
-    exportTarget === target ? (
-      <span className="spinner" aria-hidden="true" />
-    ) : (
-      <DownloadIcon />
-    );
+    exportTarget === target ? <span className="spinner" aria-hidden="true" /> : <DownloadIcon />;
   return (
     <>
       <header className="page-head">
@@ -200,39 +170,26 @@ function SetListPage() {
       </header>
 
       {sets && (
-        <div
-          className={styles.toolbar}
-          role="region"
-          aria-label="Select, import and export sets"
-        >
+        <div className={styles.toolbar} role="region" aria-label="Select, import and export sets">
           <div className={styles.selection}>
             {sets.length > 0 ? (
               <>
                 <LabeledCheckbox
                   checked={allSelected}
                   indeterminate={selectedCount > 0 && !allSelected}
-                  onCheckedChange={(on) =>
-                    setSelected(on ? new Set(sets.map((s) => s.id)) : new Set())
-                  }
+                  onCheckedChange={(on) => setSelected(on ? new Set(sets.map((s) => s.id)) : new Set())}
                   label="Select all"
                   showLabel
                 />
                 <span className={`mono tabular ${styles.count}`} role="status">
                   {selectedCount} of {plural(sets.length, "set")} selected
                 </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setSelected(new Set())}
-                  disabled={selectedCount === 0}
-                >
+                <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} disabled={selectedCount === 0}>
                   Deselect all
                 </Button>
               </>
             ) : (
-              <span className={styles.count}>
-                No sets yet — import a workbook or create a set.
-              </span>
+              <span className={styles.count}>No sets yet — import a workbook or create a set.</span>
             )}
           </div>
 
@@ -253,11 +210,7 @@ function SetListPage() {
               {...EXPORT_ITEMS}
             >
               {busyIcon("selected")} Export selected
-              {selectedCount > 0 && (
-                <span className={`mono tabular ${styles.badge}`}>
-                  {selectedCount}
-                </span>
-              )}
+              {selectedCount > 0 && <span className={`mono tabular ${styles.badge}`}>{selectedCount}</span>}
             </TransferMenu>
             <TransferMenu
               className={styles.exportAll}
@@ -275,25 +228,12 @@ function SetListPage() {
       )}
 
       {sets === null ? (
-        <ul
-          className={styles.grid}
-          aria-busy="true"
-          aria-label="Loading problem sets"
-        >
+        <ul className={styles.grid} aria-busy="true" aria-label="Loading problem sets">
           {[0, 1, 2].map((i) => (
             <li key={i} className={`${styles.card} ${styles.cardSkeleton}`}>
-              <span
-                className={`skeleton ${styles.skLine}`}
-                style={{ width: "40%" }}
-              />
-              <span
-                className={`skeleton ${styles.skLine}`}
-                style={{ width: "75%", height: 22 }}
-              />
-              <span
-                className={`skeleton ${styles.skLine}`}
-                style={{ width: "100%", height: 6 }}
-              />
+              <span className={`skeleton ${styles.skLine}`} style={{ width: "40%" }} />
+              <span className={`skeleton ${styles.skLine}`} style={{ width: "75%", height: 22 }} />
+              <span className={`skeleton ${styles.skLine}`} style={{ width: "100%", height: 6 }} />
             </li>
           ))}
         </ul>
@@ -335,11 +275,8 @@ function SetListPage() {
       >
         <p>
           This permanently removes the set, its{" "}
-          {pendingDelete
-            ? plural(pendingDelete.problems.length, "problem")
-            : "problems"}
-          , solved statuses and recorded timings from this browser. Your other
-          sets are not affected.
+          {pendingDelete ? plural(pendingDelete.problems.length, "problem") : "problems"}, solved statuses and recorded
+          timings from this browser. Your other sets are not affected.
         </p>
       </ConfirmDialog>
     </>
@@ -378,9 +315,7 @@ function SetCard({
 
   useEffect(() => {
     if (!scrollIntoView) return;
-    const reduce = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     ref.current?.scrollIntoView({
       block: "nearest",
       behavior: reduce ? "auto" : "smooth",
@@ -409,14 +344,8 @@ function SetCard({
     >
       <div className={styles.cardTop}>
         <span className={styles.select}>
-          <LabeledCheckbox
-            checked={selected}
-            onCheckedChange={onSelect}
-            label={`Select ${set.name}`}
-          />
-          <span className={`mono ${styles.index}`}>
-            No. {String(index).padStart(3, "0")}
-          </span>
+          <LabeledCheckbox checked={selected} onCheckedChange={onSelect} label={`Select ${set.name}`} />
+          <span className={`mono ${styles.index}`}>No. {String(index).padStart(3, "0")}</span>
         </span>
         <span className={styles.status}>
           <span className={styles.statusDot} aria-hidden="true" />
@@ -434,17 +363,13 @@ function SetCard({
         <div>
           <dt className="label">Source</dt>
           <dd>
-            <span className={`mono ${styles.code}`}>{sheet.shortName}</span>{" "}
-            {sheet.name}
+            <span className={`mono ${styles.code}`}>{sheet.shortName}</span> {sheet.name}
           </dd>
         </div>
         <div>
           <dt className="label">Created</dt>
           <dd>
-            <time
-              dateTime={set.createdAt}
-              title={formatDateTime(set.createdAt)}
-            >
+            <time dateTime={set.createdAt} title={formatDateTime(set.createdAt)}>
               {formatDate(set.createdAt)}
             </time>
           </dd>
@@ -493,24 +418,11 @@ function SetCard({
             aria-label={`Export ${set.name} to Excel`}
             {...EXPORT_ITEMS}
           >
-            {exporting ? (
-              <span className="spinner" aria-hidden="true" />
-            ) : (
-              <DownloadIcon />
-            )}{" "}
-            Export
+            {exporting ? <span className="spinner" aria-hidden="true" /> : <DownloadIcon />} Export
           </TransferMenu>
         </div>
-        <Link
-          href={`/sets/${set.id}`}
-          className="btn btn--sm"
-          tabIndex={-1}
-          aria-hidden="true"
-        >
-          {stats.solved > 0 || set.session.status !== "idle"
-            ? "Resume"
-            : "Open"}{" "}
-          <ArrowRightIcon />
+        <Link href={`/sets/${set.id}`} className="btn btn--sm" tabIndex={-1} aria-hidden="true">
+          {stats.solved > 0 || set.session.status !== "idle" ? "Resume" : "Open"} <ArrowRightIcon />
         </Link>
       </div>
     </li>
@@ -521,26 +433,11 @@ function EmptyState() {
   return (
     <section className={styles.empty} aria-labelledby="empty-title">
       <svg className={styles.emptyArt} viewBox="0 0 200 120" aria-hidden="true">
-        <rect
-          x="20"
-          y="16"
-          width="160"
-          height="88"
-          fill="none"
-          stroke="currentColor"
-          strokeDasharray="4 4"
-        />
+        <rect x="20" y="16" width="160" height="88" fill="none" stroke="currentColor" strokeDasharray="4 4" />
         <path d="M20 40h160M60 16v88" stroke="currentColor" opacity="0.4" />
         <path d="M100 52v36M82 70h36" stroke="var(--accent)" strokeWidth="2" />
         <path d="M12 16h4M12 104h4M14 16v88" stroke="var(--accent)" />
-        <text
-          x="6"
-          y="64"
-          fontSize="8"
-          fill="var(--accent)"
-          fontFamily="var(--font-mono)"
-          transform="rotate(-90 6 64)"
-        >
+        <text x="6" y="64" fontSize="8" fill="var(--accent)" fontFamily="var(--font-mono)" transform="rotate(-90 6 64)">
           0 sets
         </text>
       </svg>
@@ -548,8 +445,7 @@ function EmptyState() {
         The drawing board is empty.
       </h2>
       <p className="muted">
-        Create your first problem set — choose a sheet, set the difficulty mix,
-        and start the clock.
+        Create your first problem set — choose a sheet, set the difficulty mix, and start the clock.
       </p>
       <Link href="/create" className="btn btn--primary btn--lg">
         Create your first set <ArrowRightIcon />

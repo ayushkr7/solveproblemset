@@ -17,11 +17,31 @@
   gap: 12px;
 }
 
-.home { text-decoration: none; min-height: 44px; display: flex; align-items: center; }
+.home {
+  text-decoration: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
 
-.logo { display: inline-flex; align-items: center; gap: 10px; }
-.mark { width: 26px; height: 26px; flex: none; }
-.mark > svg { display: block; width: 100%; height: 100%; }
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
+.mark > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .word {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
@@ -29,9 +49,17 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.slash { color: var(--accent); margin: 0 1px; }
 
-.nav { display: flex; align-items: center; gap: 2px; }
+.slash {
+  color: var(--accent);
+  margin: 0 1px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
 
 .link {
   display: inline-flex;
@@ -46,21 +74,48 @@
   text-decoration: none;
   color: var(--ink-2);
   border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
-.link:hover { color: var(--ink); }
-.link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
 
-.long { display: none; }
-.divider { width: 1px; height: 24px; margin: 0 8px; background: var(--rule); }
+.link:hover {
+  color: var(--ink);
+}
+
+.link[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.long {
+  display: none;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 8px;
+  background: var(--rule);
+}
 
 /* Mobile: the mark only; the home link's aria-label still names the site. */
 @media (max-width: 639px) {
-  .word { display: none; }
+  .word {
+    display: none;
+  }
 }
 
 @media (min-width: 640px) {
-  .short { display: none; }
-  .long { display: inline; }
-  .link { padding: 0 14px; }
+  .short {
+    display: none;
+  }
+
+  .long {
+    display: inline;
+  }
+
+  .link {
+    padding: 0 14px;
+  }
 }

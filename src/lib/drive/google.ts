@@ -69,11 +69,17 @@ interface PickerNamespace {
 declare global {
   interface Window {
     google?: { accounts?: { oauth2?: OAuth2 }; picker?: PickerNamespace };
-    gapi?: { load(api: string, options: { callback: () => void; onerror: () => void; timeout: number; ontimeout: () => void }): void };
+    gapi?: {
+      load(
+        api: string,
+        options: { callback: () => void; onerror: () => void; timeout: number; ontimeout: () => void },
+      ): void;
+    };
   }
 }
 
-const LOAD_FAILED = "Google Drive couldn't load. Check your connection, or allow accounts.google.com and apis.google.com if a blocker is on, then try again.";
+const LOAD_FAILED =
+  "Google Drive couldn't load. Check your connection, or allow accounts.google.com and apis.google.com if a blocker is on, then try again.";
 
 const scripts = new Map<string, Promise<void>>();
 
@@ -154,7 +160,9 @@ export async function getAccessToken(): Promise<string> {
           reject(new DriveError("Google sign-in failed. Try again."));
         } else if (!oauth2.hasGrantedAllScopes(res, DRIVE_SCOPE)) {
           reject(
-            new DriveError("Google Drive access wasn't allowed. Try again and tick the box that lets this app use the Drive files it creates or opens."),
+            new DriveError(
+              "Google Drive access wasn't allowed. Try again and tick the box that lets this app use the Drive files it creates or opens.",
+            ),
           );
         } else {
           token = { value: res.access_token, expiresAt: Date.now() + Number(res.expires_in ?? 3600) * 1000 };
@@ -199,7 +207,9 @@ export async function pickWorkbook(accessToken: string): Promise<PickedFile | nu
         if (data.action === "picked") {
           const doc = data.docs?.[0];
           const size = Number(doc?.sizeBytes);
-          resolve(doc ? { id: doc.id, name: doc.name, mimeType: doc.mimeType, sizeBytes: size > 0 ? size : null } : null);
+          resolve(
+            doc ? { id: doc.id, name: doc.name, mimeType: doc.mimeType, sizeBytes: size > 0 ? size : null } : null,
+          );
         } else if (data.action === "cancel") {
           resolve(null);
         } else {

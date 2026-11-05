@@ -13,14 +13,50 @@ import type { CatalogProblem, ProblemSet } from "../src/lib/types";
 const MIN = 60_000;
 
 const catalog: CatalogProblem[] = [
-  { id: "h1", title: "H1", url: "https://leetcode.com/problems/h1/", leetCodeUrl: null, difficulty: "hard", topic: "Graphs", order: 0 },
-  { id: "e1", title: "E1", url: "https://leetcode.com/problems/e1/", leetCodeUrl: "https://leetcode.com/problems/e1-lc/", difficulty: "easy", topic: "Arrays", order: 1 },
-  { id: "m1", title: "M1", url: "https://leetcode.com/problems/m1/", leetCodeUrl: null, difficulty: "medium", topic: "", order: 2 },
-  { id: "e2", title: "E2", url: "https://leetcode.com/problems/e2/", leetCodeUrl: null, difficulty: "easy", topic: "Arrays", order: 3 },
+  {
+    id: "h1",
+    title: "H1",
+    url: "https://leetcode.com/problems/h1/",
+    leetCodeUrl: null,
+    difficulty: "hard",
+    topic: "Graphs",
+    order: 0,
+  },
+  {
+    id: "e1",
+    title: "E1",
+    url: "https://leetcode.com/problems/e1/",
+    leetCodeUrl: "https://leetcode.com/problems/e1-lc/",
+    difficulty: "easy",
+    topic: "Arrays",
+    order: 1,
+  },
+  {
+    id: "m1",
+    title: "M1",
+    url: "https://leetcode.com/problems/m1/",
+    leetCodeUrl: null,
+    difficulty: "medium",
+    topic: "",
+    order: 2,
+  },
+  {
+    id: "e2",
+    title: "E2",
+    url: "https://leetcode.com/problems/e2/",
+    leetCodeUrl: null,
+    difficulty: "easy",
+    topic: "Arrays",
+    order: 3,
+  },
 ];
 
 function make(name: string, counts: { easy: number; medium: number; hard: number }): ProblemSet {
-  return buildProblemSet({ name, sheetId: "striver-180", counts }, pickProblems(catalog, counts), Date.UTC(2026, 9, 1, 9, 30));
+  return buildProblemSet(
+    { name, sheetId: "striver-180", counts },
+    pickProblems(catalog, counts),
+    Date.UTC(2026, 9, 1, 9, 30),
+  );
 }
 
 /** Three sets with different sizes and timer states: running, stopped, never started. */
@@ -67,7 +103,11 @@ const setsSheet = (...rows: Cell[][]) => table("ProblemSets", [SET_HEAD, ...rows
 const problemsSheet = (...rows: Cell[][]) => table("Problems", [PROB_HEAD, ...rows]);
 const SET_A: Cell[] = ["S1", "Arrays", "Striver A2Z", "2026-10-26T09:30:00Z"];
 const SET_B: Cell[] = ["S2", "Graphs", "Striver 180", "2026-10-27T09:30:00Z"];
-const prob = (setId: Cell, order: Cell, extra: Partial<Record<"name" | "url" | "diff" | "status" | "min", Cell>> = {}): Cell[] => [
+const prob = (
+  setId: Cell,
+  order: Cell,
+  extra: Partial<Record<"name" | "url" | "diff" | "status" | "min", Cell>> = {},
+): Cell[] => [
   setId,
   extra.name ?? `Problem ${order}`,
   extra.url ?? `https://leetcode.com/problems/p${order}/`,
@@ -84,12 +124,22 @@ test("export → .xlsx → import round-trips several sets, each with its own pr
   assert.equal(String.fromCharCode(...bytes.slice(0, 2)), "PK", "a real zip-based .xlsx, not CSV");
 
   const tables = await readXlsx(bytes.buffer);
-  assert.deepEqual(tables.map((s) => s.name), ["ProblemSets", "Problems"], "two normalised worksheets");
+  assert.deepEqual(
+    tables.map((s) => s.name),
+    ["ProblemSets", "Problems"],
+    "two normalised worksheets",
+  );
 
   const r = ok(await readWorkbookFile(new File([bytes], exportFileName(sets, now, true)), now));
   assert.equal(r.format, 2);
-  assert.deepEqual(r.sets.map((s) => s.ref), ["S1", "S2", "S3"]);
-  assert.deepEqual(r.sets.map((s) => summary(s.set)), sets.map(summary));
+  assert.deepEqual(
+    r.sets.map((s) => s.ref),
+    ["S1", "S2", "S3"],
+  );
+  assert.deepEqual(
+    r.sets.map((s) => summary(s.set)),
+    sets.map(summary),
+  );
   for (const { set } of r.sets) assert.ok(!sets.some((s) => s.id === set.id), "fresh internal ids");
 
   const [a, b, c] = r.sets.map((s) => s.set.session);
@@ -98,7 +148,10 @@ test("export → .xlsx → import round-trips several sets, each with its own pr
   assert.equal(b!.status, "stopped");
   assert.equal(b!.accumulatedMs, 4 * MIN);
   assert.deepEqual(c, t.initialSession());
-  assert.ok(r.sets.every(({ set }) => set.session.runningSince === null), "never running after import");
+  assert.ok(
+    r.sets.every(({ set }) => set.session.runningSince === null),
+    "never running after import",
+  );
 
   // The restored session keeps working with the existing timer logic.
   let s = t.resume(r.sets[0]!.set, now);
@@ -117,8 +170,14 @@ test("a re-export of imported sets produces the same sheet data", async () => {
   const now = 20 * MIN;
   const first = buildWorkbook(library(), now);
   const again = ok(parseWorkbook(await readXlsx((await writeXlsx(first)).buffer), now));
-  const second = buildWorkbook(again.sets.map((s) => s.set), now);
-  assert.deepEqual(second.sheets.map((s) => s.rows), first.sheets.map((s) => s.rows));
+  const second = buildWorkbook(
+    again.sets.map((s) => s.set),
+    now,
+  );
+  assert.deepEqual(
+    second.sheets.map((s) => s.rows),
+    first.sheets.map((s) => s.rows),
+  );
 });
 
 test("hand-made files: interleaved rows, loose SetIDs, optional timer columns", () => {
@@ -138,10 +197,13 @@ test("hand-made files: interleaved rows, loose SetIDs, optional timer columns", 
     ]),
   );
   const [arrays, numbers] = r.sets;
-  assert.deepEqual(arrays!.set.problems.map((p) => [p.order, p.difficulty, p.solved, p.timeMs, p.url]), [
-    [1, "easy", true, null, "https://leetcode.com/problems/two-sum/"], // 0 minutes → untimed
-    [2, "medium", false, null, "https://leetcode.com/problems/p2/"], // time ignored when unsolved
-  ]);
+  assert.deepEqual(
+    arrays!.set.problems.map((p) => [p.order, p.difficulty, p.solved, p.timeMs, p.url]),
+    [
+      [1, "easy", true, null, "https://leetcode.com/problems/two-sum/"], // 0 minutes → untimed
+      [2, "medium", false, null, "https://leetcode.com/problems/p2/"], // time ignored when unsolved
+    ],
+  );
   assert.equal(numbers!.set.problems.length, 1);
   assert.equal(numbers!.set.sheetId, "striver-180");
   assert.equal(arrays!.set.session.status, "paused"); // blank state + time → Paused
@@ -200,9 +262,14 @@ test("each invalid problem value is reported with its row", () => {
 test("structure problems: missing sheets, columns, rows", () => {
   assert.match(errors(parseWorkbook([])), /no worksheets/);
   assert.match(errors(parseWorkbook([setsSheet(SET_A)])), /Missing the “Problems” worksheet/);
-  assert.match(errors(parseWorkbook([{ ...setsSheet(SET_A), name: "problemsets" }, problemsSheet(prob("S1", 1))])), /Rename the worksheet “problemsets”/);
   assert.match(
-    errors(parseWorkbook([table("ProblemSets", [["SetID", "setname", "SourceSheet"], SET_A]), problemsSheet(prob("S1", 1))])),
+    errors(parseWorkbook([{ ...setsSheet(SET_A), name: "problemsets" }, problemsSheet(prob("S1", 1))])),
+    /Rename the worksheet “problemsets”/,
+  );
+  assert.match(
+    errors(
+      parseWorkbook([table("ProblemSets", [["SetID", "setname", "SourceSheet"], SET_A]), problemsSheet(prob("S1", 1))]),
+    ),
     /missing required columns “SetName” \(found “setname”.*“CreatedAt”/,
   );
   assert.match(errors(parseWorkbook([setsSheet(), problemsSheet()])), /there are no problem sets/);
@@ -230,8 +297,15 @@ test("set metadata and timer validation", () => {
 test("format 1 (single-set) files still import", () => {
   const v1 = (session?: Cell[]) =>
     parseWorkbook([
-      table("ProblemSet", [["SetName", "SourceSheet", "CreatedAt", "FormatVersion"], ["Old set", "Striver 180", "2026-10-26T09:30:00Z", 1]]),
-      table("Problems", [PROB_HEAD.slice(1), prob("x", 1).slice(1), prob("x", 2, { status: "Unsolved", min: 0 }).slice(1)]),
+      table("ProblemSet", [
+        ["SetName", "SourceSheet", "CreatedAt", "FormatVersion"],
+        ["Old set", "Striver 180", "2026-10-26T09:30:00Z", 1],
+      ]),
+      table("Problems", [
+        PROB_HEAD.slice(1),
+        prob("x", 1).slice(1),
+        prob("x", 2, { status: "Unsolved", min: 0 }).slice(1),
+      ]),
       ...(session ? [table("Session", [["ElapsedSeconds", "TimerState"], session])] : []),
     ]);
   const r = ok(v1([120, "Paused"]));
@@ -255,7 +329,11 @@ test("file checks: type, content, legacy workbooks", async () => {
 
 test("import plan: name conflicts with saved sets and within the file", () => {
   const imported = (...names: string[]): ImportedSet[] =>
-    names.map((name, i) => ({ ref: `S${i + 1}`, row: i + 2, set: { ...make(name, { easy: 1, medium: 0, hard: 0 }), id: `new-${i}` } }));
+    names.map((name, i) => ({
+      ref: `S${i + 1}`,
+      row: i + 2,
+      set: { ...make(name, { easy: 1, medium: 0, hard: 0 }), id: `new-${i}` },
+    }));
   const existing = [{ name: "Arrays" }, { name: "Arrays (2)" }];
   const plan = planImport(imported("Arrays", "Graphs", "graphs", "Trees"), existing);
 
@@ -271,15 +349,23 @@ test("import plan: name conflicts with saved sets and within the file", () => {
   assert.equal(planErrors(plan, existing).size, 0, "suggested names are free");
 
   // Importing a clashing name as-is, or two identical final names, is blocked.
-  const bad = plan.map((p, i) => (i === 0 ? { ...p, action: "import" as const } : i === 2 ? { ...p, rename: "GRAPHS" } : p));
+  const bad = plan.map((p, i) =>
+    i === 0 ? { ...p, action: "import" as const } : i === 2 ? { ...p, rename: "GRAPHS" } : p,
+  );
   const errs = planErrors(bad, existing);
   assert.match(errs.get(0)!, /already have a set named “Arrays”/);
   assert.match(errs.get(2)!, /Another set in this import is also named “GRAPHS”/);
 
   const outcome = applyPlan(plan.map((p, i) => (i === 3 ? { ...p, action: "skip" as const } : p)));
   assert.deepEqual([outcome.imported, outcome.renamed, outcome.skipped], [3, 2, 1]);
-  assert.deepEqual(outcome.sets.map((s) => s.name), ["Arrays (3)", "Graphs", "graphs (2)"]);
-  assert.deepEqual(outcome.sets.map((s) => s.id), ["new-0", "new-1", "new-2"]);
+  assert.deepEqual(
+    outcome.sets.map((s) => s.name),
+    ["Arrays (3)", "Graphs", "graphs (2)"],
+  );
+  assert.deepEqual(
+    outcome.sets.map((s) => s.id),
+    ["new-0", "new-1", "new-2"],
+  );
 });
 
 test("name helpers", () => {
@@ -292,35 +378,91 @@ test("name helpers", () => {
 test("export file names", () => {
   const now = new Date(2026, 9, 27, 12).getTime();
   assert.equal(exportFileName([{ name: "a" }, { name: "b" }], now, true), "DSA_All_Problem_Sets_2026-10-27.xlsx");
-  assert.equal(exportFileName([{ name: "a" }, { name: "b" }, { name: "c" }], now), "DSA_3_Problem_Sets_2026-10-27.xlsx");
+  assert.equal(
+    exportFileName([{ name: "a" }, { name: "b" }, { name: "c" }], now),
+    "DSA_3_Problem_Sets_2026-10-27.xlsx",
+  );
   assert.equal(exportFileName([{ name: "Graphs — week 1!" }], now), "Graphs_week_1_2026-10-27.xlsx");
   assert.equal(exportFileName([{ name: "???" }], now), "DSA_Practice_Set_2026-10-27.xlsx");
 });
 
 test("optional Rating column: Codeforces ratings round-trip; validated; blank allowed", async () => {
   const cf: CatalogProblem[] = [
-    { id: "cf-1A", title: "A", url: "https://codeforces.com/problemset/problem/1/A", leetCodeUrl: null, difficulty: "easy", topic: "math", order: 1, rating: 800 },
-    { id: "cf-1B", title: "B", url: "https://codeforces.com/problemset/problem/1/B", leetCodeUrl: null, difficulty: "medium", topic: "", order: 2, rating: 1400 },
+    {
+      id: "cf-1A",
+      title: "A",
+      url: "https://codeforces.com/problemset/problem/1/A",
+      leetCodeUrl: null,
+      difficulty: "easy",
+      topic: "math",
+      order: 1,
+      rating: 800,
+    },
+    {
+      id: "cf-1B",
+      title: "B",
+      url: "https://codeforces.com/problemset/problem/1/B",
+      leetCodeUrl: null,
+      difficulty: "medium",
+      topic: "",
+      order: 2,
+      rating: 1400,
+    },
   ];
   const set = buildProblemSet({ name: "CF", sheetId: "codeforces", counts: { easy: 1, medium: 1, hard: 0 } }, cf, 0);
   const back = ok(parseWorkbook(await readXlsx((await writeXlsx(buildWorkbook([set], 0))).buffer), 0)).sets[0]!.set;
   assert.equal(back.sheetId, "codeforces");
-  assert.deepEqual(back.problems.map((p) => p.rating), [800, 1400]);
+  assert.deepEqual(
+    back.problems.map((p) => p.rating),
+    [800, 1400],
+  );
 
-  const withRating = (r: Cell) => parseWorkbook([setsSheet(SET_A), table("Problems", [[...PROB_HEAD, "Rating"], [...prob("S1", 1), r]])]);
+  const withRating = (r: Cell) =>
+    parseWorkbook([
+      setsSheet(SET_A),
+      table("Problems", [
+        [...PROB_HEAD, "Rating"],
+        [...prob("S1", 1), r],
+      ]),
+    ]);
   assert.equal(ok(withRating(1900)).sets[0]!.set.problems[0]!.rating, 1900);
   assert.equal(ok(withRating(null)).sets[0]!.set.problems[0]!.rating, null);
-  assert.equal(ok(parseWorkbook([setsSheet(SET_A), problemsSheet(prob("S1", 1))])).sets[0]!.set.problems[0]!.rating, null, "column may be absent");
+  assert.equal(
+    ok(parseWorkbook([setsSheet(SET_A), problemsSheet(prob("S1", 1))])).sets[0]!.set.problems[0]!.rating,
+    null,
+    "column may be absent",
+  );
   assert.match(errors(withRating("hard")), /Rating “hard” must be a whole number/);
   assert.match(errors(withRating(1450.5)), /Rating “1450\.5” must be a whole number/);
 });
 
 test("optional LeetCodeURL column: read when present, validated, blank allowed", () => {
   const withLc = (lc: Cell) =>
-    parseWorkbook([setsSheet(SET_A), table("Problems", [[...PROB_HEAD, "LeetCodeURL"], [...prob("S1", 1), lc]])]);
-  assert.equal(ok(withLc("https://leetcode.com/problems/two-sum/")).sets[0]!.set.problems[0]!.leetCodeUrl, "https://leetcode.com/problems/two-sum/");
+    parseWorkbook([
+      setsSheet(SET_A),
+      table("Problems", [
+        [...PROB_HEAD, "LeetCodeURL"],
+        [...prob("S1", 1), lc],
+      ]),
+    ]);
+  assert.equal(
+    ok(withLc("https://leetcode.com/problems/two-sum/")).sets[0]!.set.problems[0]!.leetCodeUrl,
+    "https://leetcode.com/problems/two-sum/",
+  );
   assert.equal(ok(withLc(null)).sets[0]!.set.problems[0]!.leetCodeUrl, null);
-  assert.equal(ok(parseWorkbook([setsSheet(SET_A), problemsSheet(prob("S1", 1))])).sets[0]!.set.problems[0]!.leetCodeUrl, null, "column may be absent");
+  assert.equal(
+    ok(parseWorkbook([setsSheet(SET_A), problemsSheet(prob("S1", 1))])).sets[0]!.set.problems[0]!.leetCodeUrl,
+    null,
+    "column may be absent",
+  );
   assert.match(errors(withLc("not a link")), /row 2: LeetCodeURL “not a link” isn't a valid web address/);
-  assert.equal(ok(parseWorkbook([table("ProblemSets", [SET_HEAD, ["S1", "B", "NeetCode Blind 75", "2026-10-31"]]), problemsSheet(prob("S1", 1))])).sets[0]!.set.sheetId, "neetcode-blind75");
+  assert.equal(
+    ok(
+      parseWorkbook([
+        table("ProblemSets", [SET_HEAD, ["S1", "B", "NeetCode Blind 75", "2026-10-31"]]),
+        problemsSheet(prob("S1", 1)),
+      ]),
+    ).sets[0]!.set.sheetId,
+    "neetcode-blind75",
+  );
 });

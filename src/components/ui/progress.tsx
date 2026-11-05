@@ -9,7 +9,10 @@ import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
-function Progress({ className, ...props }: Omit<ComponentProps<typeof ProgressPrimitive.Root>, "className"> & { className?: string }) {
+function Progress({
+  className,
+  ...props
+}: Omit<ComponentProps<typeof ProgressPrimitive.Root>, "className"> & { className?: string }) {
   return (
     <ProgressPrimitive.Root data-slot="progress" className={cn("progress", className)} {...props}>
       <ProgressPrimitive.Track data-slot="progress-track" className="progress__track">

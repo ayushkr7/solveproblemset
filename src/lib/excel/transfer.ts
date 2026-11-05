@@ -28,7 +28,9 @@ function sniff(bytes: Uint8Array): FileKind {
 export function workbookSizeError(bytes: number): ImportResult | null {
   if (bytes === 0) return importFailure("The file is empty.");
   if (bytes > MAX_FILE_BYTES) {
-    return importFailure(`The file is ${(bytes / 1024 / 1024).toFixed(1)} MB; the limit is ${MAX_FILE_BYTES / 1024 / 1024} MB.`);
+    return importFailure(
+      `The file is ${(bytes / 1024 / 1024).toFixed(1)} MB; the limit is ${MAX_FILE_BYTES / 1024 / 1024} MB.`,
+    );
   }
   return null;
 }
@@ -73,7 +75,9 @@ export async function readWorkbookData(data: ArrayBuffer, now: number = Date.now
   try {
     return parseWorkbook(await readXlsx(data), now);
   } catch {
-    return importFailure("The workbook couldn't be opened — it may be damaged. Open it in Excel, save it again and retry.");
+    return importFailure(
+      "The workbook couldn't be opened — it may be damaged. Open it in Excel, save it again and retry.",
+    );
   }
 }
 

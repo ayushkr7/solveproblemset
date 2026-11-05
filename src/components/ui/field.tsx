@@ -22,14 +22,20 @@ function FieldLabel({ className, ...props }: WithClass<ComponentProps<typeof Fie
 }
 
 function FieldDescription({ className, ...props }: WithClass<ComponentProps<typeof FieldPrimitive.Description>>) {
-  return <FieldPrimitive.Description data-slot="field-description" className={cn("field__hint", className)} {...props} />;
+  return (
+    <FieldPrimitive.Description data-slot="field-description" className={cn("field__hint", className)} {...props} />
+  );
 }
 
 /**
  * Shown while `message` is set (the form's own validation decides), announced
  * as an alert. Rendered as a <p> with the ✕ marker used across the app.
  */
-function FieldError({ message, className, ...props }: WithClass<Omit<ComponentProps<typeof FieldPrimitive.Error>, "children" | "match">> & { message?: ReactNode }) {
+function FieldError({
+  message,
+  className,
+  ...props
+}: WithClass<Omit<ComponentProps<typeof FieldPrimitive.Error>, "children" | "match">> & { message?: ReactNode }) {
   return (
     <FieldPrimitive.Error
       data-slot="field-error"

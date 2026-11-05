@@ -9,9 +9,25 @@
   padding-block: 32px;
 }
 
-.brand { display: grid; gap: 12px; }
-.note { max-width: 44ch; font-size: 0.875rem; color: var(--ink-2); }
-.contact { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 0.875rem; }
+.brand {
+  display: grid;
+  gap: 12px;
+}
+
+.note {
+  max-width: 44ch;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-size: 0.875rem;
+}
+
 .contact a {
   display: inline-flex;
   align-items: center;
@@ -22,9 +38,18 @@
   text-underline-offset: 4px;
   overflow-wrap: anywhere;
 }
-.contact a:hover { color: var(--accent); text-decoration-color: currentColor; }
 
-.links { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.contact a:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
 .links a {
   min-height: 44px;
   display: inline-flex;
@@ -36,8 +61,17 @@
   text-decoration: none;
   color: var(--ink-2);
 }
-.links a:hover { color: var(--accent); }
-.ext { width: 12px; height: 12px; margin-left: 6px; flex: none; }
+
+.links a:hover {
+  color: var(--accent);
+}
+
+.ext {
+  width: 12px;
+  height: 12px;
+  margin-left: 6px;
+  flex: none;
+}
 
 .meta {
   display: flex;
@@ -48,7 +82,14 @@
   padding-top: 16px;
   border-top: 1px solid var(--rule);
 }
-.legal { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; }
+
+.legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+}
+
 .legal a {
   min-height: 44px;
   display: inline-flex;
@@ -62,9 +103,19 @@
   text-decoration-color: var(--rule-strong);
   text-underline-offset: 4px;
 }
-.legal a:hover { color: var(--accent); text-decoration-color: currentColor; }
+
+.legal a:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
 
 @media (min-width: 768px) {
-  .inner { grid-template-columns: 1fr auto; align-items: start; }
-  .meta { grid-column: 1 / -1; }
+  .inner {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+
+  .meta {
+    grid-column: 1 / -1;
+  }
 }

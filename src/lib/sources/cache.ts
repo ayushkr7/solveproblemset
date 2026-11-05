@@ -15,7 +15,10 @@ export interface CacheOptions {
   now?: () => number;
 }
 
-export function cachedLoader<T>(load: () => Promise<T>, { ttlMs, retryMs = 60_000, now = Date.now }: CacheOptions): () => Promise<Cached<T>> {
+export function cachedLoader<T>(
+  load: () => Promise<T>,
+  { ttlMs, retryMs = 60_000, now = Date.now }: CacheOptions,
+): () => Promise<Cached<T>> {
   let cached: Cached<T> | null = null;
   let inflight: Promise<Cached<T>> | null = null;
   let failedAt = -Infinity;

@@ -1,0 +1,7 @@
+# Files in .gitignore are skipped too.
+package-lock.json
+
+# Problem-sheet data: one problem per line reads better than Prettier's expanded objects.
+src/data/a2zproblemset.ts
+src/data/striver180problemset.ts
+src/data/neetcodeBlind75.ts

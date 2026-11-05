@@ -54,7 +54,12 @@ function SelectTrigger({
     else if (ref) ref.current = el;
   };
   return (
-    <SelectPrimitive.Trigger ref={setRef} data-slot="select-trigger" className={cn("select-trigger", className)} {...props}>
+    <SelectPrimitive.Trigger
+      ref={setRef}
+      data-slot="select-trigger"
+      className={cn("select-trigger", className)}
+      {...props}
+    >
       {children ?? <SelectPrimitive.Value data-slot="select-value" className="select-trigger__value" />}
       <SelectPrimitive.Icon data-slot="select-icon" className="select-trigger__icon">
         <ChevronDownIcon />
@@ -86,7 +91,11 @@ function SelectContent({ className, children, ...props }: WithClass<ComponentPro
   );
 }
 
-function SelectItem({ className, children, ...props }: WithClass<ComponentProps<typeof SelectPrimitive.Item>> & { children: ReactNode }) {
+function SelectItem({
+  className,
+  children,
+  ...props
+}: WithClass<ComponentProps<typeof SelectPrimitive.Item>> & { children: ReactNode }) {
   return (
     <SelectPrimitive.Item data-slot="select-item" className={cn("select-item", className)} {...props}>
       <SelectPrimitive.ItemIndicator className="select-item__indicator" keepMounted>

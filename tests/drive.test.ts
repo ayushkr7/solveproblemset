@@ -32,7 +32,8 @@ function stubFetch(...replies: (Response | Error)[]) {
   return { calls, fetchImpl };
 }
 
-const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+const ok = (body: unknown) =>
+  new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
 const fail = (status: number, reason?: string) =>
   new Response(JSON.stringify({ error: { code: status, errors: reason ? [{ reason }] : [] } }), { status });
 
@@ -46,11 +47,31 @@ async function rejects(p: Promise<unknown>, message: RegExp, kind: DriveError["k
 }
 
 const catalog: CatalogProblem[] = [
-  { id: "e1", title: "E1", url: "https://leetcode.com/problems/e1/", leetCodeUrl: null, difficulty: "easy", topic: "Arrays", order: 0 },
-  { id: "m1", title: "M1", url: "https://leetcode.com/problems/m1/", leetCodeUrl: null, difficulty: "medium", topic: "Graphs", order: 1 },
+  {
+    id: "e1",
+    title: "E1",
+    url: "https://leetcode.com/problems/e1/",
+    leetCodeUrl: null,
+    difficulty: "easy",
+    topic: "Arrays",
+    order: 0,
+  },
+  {
+    id: "m1",
+    title: "M1",
+    url: "https://leetcode.com/problems/m1/",
+    leetCodeUrl: null,
+    difficulty: "medium",
+    topic: "Graphs",
+    order: 1,
+  },
 ];
 const counts = { easy: 1, medium: 1, hard: 0 };
-const set = buildProblemSet({ name: "Week 1", sheetId: "striver-180", counts }, pickProblems(catalog, counts), Date.UTC(2026, 9, 1));
+const set = buildProblemSet(
+  { name: "Week 1", sheetId: "striver-180", counts },
+  pickProblems(catalog, counts),
+  Date.UTC(2026, 9, 1),
+);
 
 test("export folder: reuses the app's folder, or creates it in My Drive", async () => {
   const found = stubFetch(ok({ files: [{ id: "folder-1" }] }));
@@ -76,7 +97,9 @@ test("multipart body: metadata part, then the file bytes", async () => {
   assert.equal(body.type, "multipart/related; boundary=b0");
   const bytes = new Uint8Array(await body.arrayBuffer());
   const text = new TextDecoder().decode(bytes);
-  assert.ok(text.startsWith('--b0\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{"name":"a.xlsx"}\r\n--b0\r\n'));
+  assert.ok(
+    text.startsWith('--b0\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{"name":"a.xlsx"}\r\n--b0\r\n'),
+  );
   assert.ok(text.endsWith("\r\n--b0--\r\n"));
   const start = text.indexOf(`${XLSX_MIME}\r\n\r\n`) + XLSX_MIME.length + 4;
   assert.deepEqual([...bytes.slice(start, start + 3)], [1, 2, 3]);
@@ -91,7 +114,11 @@ test("upload, then download: the workbook survives the round trip", async () => 
   );
 
   const saved = await uploadWorkbook("tok", file, fetchImpl);
-  assert.deepEqual(saved, { id: "file-1", name: file.fileName, webViewLink: "https://drive.google.com/file/d/file-1/view" });
+  assert.deepEqual(saved, {
+    id: "file-1",
+    name: file.fileName,
+    webViewLink: "https://drive.google.com/file/d/file-1/view",
+  });
   const upload = calls[1]!;
   assert.match(upload.url, /^https:\/\/www\.googleapis\.com\/upload\/drive\/v3\/files\?uploadType=multipart/);
   const metadata = await (upload.init.body as Blob).text();
@@ -116,7 +143,8 @@ test("Google Sheets are exported as .xlsx", async () => {
 });
 
 test("Drive failures become readable messages", async () => {
-  const fetchFails = (reply: Response | Error) => downloadWorkbook("tok", { id: "f", mimeType: XLSX_MIME }, stubFetch(reply).fetchImpl);
+  const fetchFails = (reply: Response | Error) =>
+    downloadWorkbook("tok", { id: "f", mimeType: XLSX_MIME }, stubFetch(reply).fetchImpl);
   await rejects(fetchFails(new TypeError("Failed to fetch")), /Couldn't reach Google Drive/);
   await rejects(fetchFails(fail(401)), /sign-in has expired/, "auth");
   await rejects(fetchFails(fail(403, "storageQuotaExceeded")), /Drive is full/);
@@ -125,7 +153,10 @@ test("Drive failures become readable messages", async () => {
   await rejects(fetchFails(fail(403)), /denied access/);
   await rejects(fetchFails(fail(404)), /wasn't found/);
   await rejects(fetchFails(new Response("<html>", { status: 502 })), /having problems/);
-  await rejects(uploadWorkbook("tok", { fileName: "a.xlsx", bytes: new Uint8Array([1]) }, stubFetch(ok({}), ok({})).fetchImpl), /unexpected response/);
+  await rejects(
+    uploadWorkbook("tok", { fileName: "a.xlsx", bytes: new Uint8Array([1]) }, stubFetch(ok({}), ok({})).fetchImpl),
+    /unexpected response/,
+  );
 });
 
 test("downloaded bytes get the same checks as local files", async () => {

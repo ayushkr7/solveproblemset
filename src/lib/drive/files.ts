@@ -54,8 +54,10 @@ export function driveErrorMessage(status: number, reason: string | undefined): s
       return "Google Drive has blocked downloads of this file.";
   }
   if (status === 401) return "Your Google sign-in has expired. Try again to sign in again.";
-  if (status === 403) return "Google Drive denied access to this file. Pick it again, or check that you can still open it in Drive.";
-  if (status === 404) return "The file wasn't found in Google Drive. It may have been deleted, or you may no longer have access.";
+  if (status === 403)
+    return "Google Drive denied access to this file. Pick it again, or check that you can still open it in Drive.";
+  if (status === 404)
+    return "The file wasn't found in Google Drive. It may have been deleted, or you may no longer have access.";
   if (status === 429) return "Google Drive is busy right now. Wait a minute and try again.";
   if (status >= 500) return "Google Drive is having problems right now. Try again in a few minutes.";
   return "Google Drive couldn't complete the request. Try again.";
@@ -116,7 +118,12 @@ export async function ensureFolder(token: string, fetchImpl: Fetch = fetch): Pro
 }
 
 /** A multipart/related upload body: JSON metadata, then the file. */
-export function multipartBody(metadata: object, bytes: Uint8Array<ArrayBuffer>, mimeType: string, boundary: string): Blob {
+export function multipartBody(
+  metadata: object,
+  bytes: Uint8Array<ArrayBuffer>,
+  mimeType: string,
+  boundary: string,
+): Blob {
   return new Blob(
     [
       `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`,
@@ -136,7 +143,12 @@ export async function uploadWorkbook(
 ): Promise<DriveFile> {
   const folderId = await ensureFolder(token, fetchImpl);
   const boundary = `solve-problemset-${crypto.randomUUID()}`;
-  const body = multipartBody({ name: file.fileName, mimeType: XLSX_MIME, parents: [folderId] }, file.bytes, XLSX_MIME, boundary);
+  const body = multipartBody(
+    { name: file.fileName, mimeType: XLSX_MIME, parents: [folderId] },
+    file.bytes,
+    XLSX_MIME,
+    boundary,
+  );
   const res = await call(fetchImpl, token, `${UPLOAD_API}/files?uploadType=multipart&fields=id,name,webViewLink`, {
     method: "POST",
     headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
