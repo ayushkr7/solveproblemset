@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { NotEnoughRatedError, buildProblemSet, countByDifficulty, pickByRating, validateRating } from "../src/lib/generate";
+import {
+  NotEnoughRatedError,
+  buildProblemSet,
+  countByDifficulty,
+  pickByRating,
+  validateRating,
+} from "../src/lib/generate";
 import { cachedLoader } from "../src/lib/sources/cache";
 import {
   CF_QUALITY,
@@ -18,7 +24,12 @@ import type { CatalogProblem } from "../src/lib/types";
 // --- Codeforces -------------------------------------------------------------
 
 const MODERN = CF_QUALITY.sinceEpochSeconds + 86_400;
-const contest = (id: number, name: string, start = MODERN): CfContest => ({ id, name, phase: "FINISHED", startTimeSeconds: start });
+const contest = (id: number, name: string, start = MODERN): CfContest => ({
+  id,
+  name,
+  phase: "FINISHED",
+  startTimeSeconds: start,
+});
 
 test("Codeforces: regular rated rounds only", () => {
   for (const name of [
@@ -30,7 +41,8 @@ test("Codeforces: regular rated rounds only", () => {
     "Hello 2025",
     "Pinely Round 4 (Div. 1 + Div. 2)",
     "Refact.ai Match 1 (Codeforces Round 985)",
-  ]) assert.ok(isRegularRound(name), name);
+  ])
+    assert.ok(isRegularRound(name), name);
   for (const name of [
     "April Fools Day Contest 2024",
     "Kotlin Heroes: Episode 11",
@@ -38,11 +50,19 @@ test("Codeforces: regular rated rounds only", () => {
     "Testing Round 1001",
     "Microsoft Q# Coding Contest - Summer 2020",
     "Unknown Language Round 1",
-  ]) assert.ok(!isRegularRound(name), name);
+  ])
+    assert.ok(!isRegularRound(name), name);
 });
 
 test("Codeforces: rating → difficulty tier", () => {
-  assert.deepEqual([800, 1100, 1200, 1700, 1800, 3500].map(ratingDifficulty), ["easy", "easy", "medium", "medium", "hard", "hard"]);
+  assert.deepEqual([800, 1100, 1200, 1700, 1800, 3500].map(ratingDifficulty), [
+    "easy",
+    "easy",
+    "medium",
+    "medium",
+    "hard",
+    "hard",
+  ]);
   assert.equal(CF_RATINGS[0], 800);
   assert.equal(CF_RATINGS.at(-1), 3500);
   assert.equal(CF_RATINGS.length, 28);
@@ -56,8 +76,19 @@ test("Codeforces: catalog keeps rated problems from regular modern rounds, minus
     contest(1998, "April Fools Day Contest 2024"),
     { ...contest(2001, "Codeforces Round 971 (Div. 4)"), phase: "BEFORE" },
   ];
-  const p = (contestId: number, index: string, rating: number | undefined, tags: string[] = ["greedy"], type = "PROGRAMMING"): CfProblem => ({
-    contestId, index, name: `P ${contestId}${index}`, type, rating, tags,
+  const p = (
+    contestId: number,
+    index: string,
+    rating: number | undefined,
+    tags: string[] = ["greedy"],
+    type = "PROGRAMMING",
+  ): CfProblem => ({
+    contestId,
+    index,
+    name: `P ${contestId}${index}`,
+    type,
+    rating,
+    tags,
   });
   const problems: CfProblem[] = [
     p(2000, "A", 800, ["math", "greedy", "brute force", "sortings"]),
@@ -73,11 +104,22 @@ test("Codeforces: catalog keeps rated problems from regular modern rounds, minus
     p(2001, "A", 800), // unfinished contest
   ];
   const solved: Record<string, number> = { "2000A": 5000, "2000B": 4000, "1999A": 3000, "1999B": 100, "2000C": 900 };
-  const stats: CfProblemStatistics[] = problems.map((x) => ({ contestId: x.contestId, index: x.index, solvedCount: solved[`${x.contestId}${x.index}`] ?? 9999 }));
+  const stats: CfProblemStatistics[] = problems.map((x) => ({
+    contestId: x.contestId,
+    index: x.index,
+    solvedCount: solved[`${x.contestId}${x.index}`] ?? 9999,
+  }));
 
   const catalog = codeforcesCatalog({ problems, problemStatistics: stats }, contests);
-  assert.deepEqual(catalog.map((c) => c.id), ["cf-2000A", "cf-2000B", "cf-1999A", "cf-2000C"], "rating, then newest contest first");
-  assert.deepEqual(catalog.map((c) => c.order), [1, 2, 3, 4]);
+  assert.deepEqual(
+    catalog.map((c) => c.id),
+    ["cf-2000A", "cf-2000B", "cf-1999A", "cf-2000C"],
+    "rating, then newest contest first",
+  );
+  assert.deepEqual(
+    catalog.map((c) => c.order),
+    [1, 2, 3, 4],
+  );
   const first = catalog[0]!;
   assert.equal(first.url, "https://codeforces.com/problemset/problem/2000/A");
   assert.equal(first.rating, 800);
@@ -113,7 +155,10 @@ test("LeetCode: free, well-liked problems only, in LeetCode's numbering", () => 
     q(8, { titleSlug: "../evil" }),
     q(9, { difficulty: "Unknown" }),
   ]);
-  assert.deepEqual(catalog.map((c) => c.id), ["q-2", "q-6", "q-10"]);
+  assert.deepEqual(
+    catalog.map((c) => c.id),
+    ["q-2", "q-6", "q-10"],
+  );
   assert.deepEqual(countByDifficulty(catalog), { easy: 1, medium: 1, hard: 1 });
   const p = catalog[0]!;
   assert.equal(p.url, "https://leetcode.com/problems/q-2/");
@@ -128,8 +173,14 @@ function rated(perRating: Record<number, number>): CatalogProblem[] {
   let order = 0;
   return Object.entries(perRating).flatMap(([r, n]) =>
     Array.from({ length: n }, (_, i) => ({
-      id: `${r}-${i}`, title: `${r}-${i}`, url: `https://codeforces.com/problemset/problem/1/${r}${i}`, leetCodeUrl: null,
-      difficulty: ratingDifficulty(Number(r)), topic: "", order: ++order, rating: Number(r),
+      id: `${r}-${i}`,
+      title: `${r}-${i}`,
+      url: `https://codeforces.com/problemset/problem/1/${r}${i}`,
+      leetCodeUrl: null,
+      difficulty: ratingDifficulty(Number(r)),
+      topic: "",
+      order: ++order,
+      rating: Number(r),
     })),
   );
 }
@@ -137,8 +188,15 @@ const ratingsOf = (ps: CatalogProblem[]) => ps.map((p) => p.rating);
 
 test("pickByRating spreads the count evenly over the range, lowest first", () => {
   const pool = rated({ 1100: 20, 1200: 20, 1300: 20, 1400: 20, 1500: 20, 1600: 20, 1700: 20 });
-  assert.deepEqual(ratingsOf(pickByRating(pool, { min: 1200, max: 1600, count: 10 })), [1200, 1200, 1300, 1300, 1400, 1400, 1500, 1500, 1600, 1600]);
-  assert.deepEqual(ratingsOf(pickByRating(pool, { min: 1200, max: 1600, count: 3 })), [1200, 1400, 1600], "fewer problems than ratings: evenly spaced");
+  assert.deepEqual(
+    ratingsOf(pickByRating(pool, { min: 1200, max: 1600, count: 10 })),
+    [1200, 1200, 1300, 1300, 1400, 1400, 1500, 1500, 1600, 1600],
+  );
+  assert.deepEqual(
+    ratingsOf(pickByRating(pool, { min: 1200, max: 1600, count: 3 })),
+    [1200, 1400, 1600],
+    "fewer problems than ratings: evenly spaced",
+  );
   assert.deepEqual(ratingsOf(pickByRating(pool, { min: 1400, max: 1400, count: 4 })), [1400, 1400, 1400, 1400]);
   const seven = pickByRating(pool, { min: 1200, max: 1600, count: 7 });
   assert.equal(new Set(seven.map((p) => p.id)).size, 7, "no repeats");
@@ -148,7 +206,11 @@ test("pickByRating tops up a short rating from the others; too few overall is an
   const pool = [...rated({ 800: 1, 900: 10 }), { ...rated({ 1000: 1 })[0]!, rating: undefined }];
   assert.deepEqual(ratingsOf(pickByRating(pool, { min: 800, max: 900, count: 6 })), [800, 900, 900, 900, 900, 900]);
   assert.throws(() => pickByRating(pool, { min: 800, max: 900, count: 12 }), NotEnoughRatedError);
-  assert.throws(() => pickByRating(pool, { min: 1000, max: 1000, count: 1 }), /Only 0 problems rated 1000/, "unrated problems never match");
+  assert.throws(
+    () => pickByRating(pool, { min: 1000, max: 1000, count: 1 }),
+    /Only 0 problems rated 1000/,
+    "unrated problems never match",
+  );
 });
 
 test("validateRating", () => {
@@ -157,15 +219,28 @@ test("validateRating", () => {
   assert.match(validateRating({ min: 800, max: 800, count: 0 }).count ?? "", /1 or more/);
   assert.match(validateRating({ min: 800, max: 800, count: 2.5 }).count ?? "", /whole number/);
   assert.match(validateRating({ min: 800, max: 800, count: 51 }).count ?? "", /At most 50/);
-  assert.equal(validateRating({ min: 1200, max: 1600, count: 9 }, 8).count, "Only 8 problems rated 1200–1600 available.");
+  assert.equal(
+    validateRating({ min: 1200, max: 1600, count: 9 }, 8).count,
+    "Only 8 problems rated 1200–1600 available.",
+  );
 });
 
 test("sets built from Codeforces keep each problem's rating", () => {
   const picked = pickByRating(rated({ 800: 3, 1900: 3 }), { min: 800, max: 1900, count: 2 });
   const set = buildProblemSet({ name: "CF", sheetId: "codeforces", counts: countByDifficulty(picked) }, picked, 0);
-  assert.deepEqual(set.problems.map((p) => [p.rating, p.difficulty]), [[800, "easy"], [1900, "hard"]]);
+  assert.deepEqual(
+    set.problems.map((p) => [p.rating, p.difficulty]),
+    [
+      [800, "easy"],
+      [1900, "hard"],
+    ],
+  );
   assert.deepEqual(set.requested, { easy: 1, medium: 0, hard: 1 });
-  const lc = buildProblemSet({ name: "LC", sheetId: "leetcode", counts: { easy: 1, medium: 0, hard: 0 } }, leetCodeCatalog([q(1, { difficulty: "Easy" })]), 0);
+  const lc = buildProblemSet(
+    { name: "LC", sheetId: "leetcode", counts: { easy: 1, medium: 0, hard: 0 } },
+    leetCodeCatalog([q(1, { difficulty: "Easy" })]),
+    0,
+  );
   assert.equal(lc.problems[0]!.rating, null);
 });
 
@@ -185,7 +260,16 @@ test("cachedLoader: fresh hits, stale-while-revalidate, failures keep the last g
   );
   const tick = () => new Promise((r) => setImmediate(r));
 
-  await assert.rejects(cachedLoader(async () => { throw new Error("down"); }, { ttlMs: 1 })(), /down/, "nothing cached yet: the error surfaces");
+  await assert.rejects(
+    cachedLoader(
+      async () => {
+        throw new Error("down");
+      },
+      { ttlMs: 1 },
+    )(),
+    /down/,
+    "nothing cached yet: the error surfaces",
+  );
 
   const [a, b] = await Promise.all([get(), get()]);
   assert.equal(a.value, 1);

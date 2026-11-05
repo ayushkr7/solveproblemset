@@ -20,7 +20,13 @@ import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger } from "@
 import { useToast } from "@/components/ui/toast";
 import { getSheet } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
-import { DRIVE_ENABLED, DRIVE_FOLDER_NAME, DriveError, pickDriveWorkbook, readDriveWorkbook } from "@/lib/drive/transfer";
+import {
+  DRIVE_ENABLED,
+  DRIVE_FOLDER_NAME,
+  DriveError,
+  pickDriveWorkbook,
+  readDriveWorkbook,
+} from "@/lib/drive/transfer";
 import { formatClock, plural } from "@/lib/format";
 import { applyPlan, planErrors, planImport, type PlanAction, type PlanItem, type PlanOutcome } from "@/lib/excel/plan";
 import {
@@ -128,8 +134,16 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
           onPreload={preloadXlsx}
           busy={unavailable}
           pending={reading}
-          deviceItem={<><UploadIcon /> From this device…</>}
-          driveItem={<><CloudIcon /> From Google Drive…</>}
+          deviceItem={
+            <>
+              <UploadIcon /> From this device…
+            </>
+          }
+          driveItem={
+            <>
+              <CloudIcon /> From Google Drive…
+            </>
+          }
         >
           {reading ? <span className="spinner" aria-hidden="true" /> : <UploadIcon />}
           {reading ? "Reading…" : "Import sets"}
@@ -154,7 +168,9 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
             if (file) void handleFile(file);
           }}
         />
-        <span className="visually-hidden" role="status">{reading ? "Reading workbook…" : ""}</span>
+        <span className="visually-hidden" role="status">
+          {reading ? "Reading workbook…" : ""}
+        </span>
       </div>
 
       <Dialog open={invalid !== null} onOpenChange={(open) => !open && setInvalid(null)}>
@@ -225,7 +241,6 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
   );
 }
 
-
 // ---------------------------------------------------------------------------
 
 const ACTION_LABEL: Record<PlanAction, string> = {
@@ -236,7 +251,10 @@ const ACTION_LABEL: Record<PlanAction, string> = {
 
 function setSummary(set: ProblemSet): string {
   const stats = getStats(set);
-  const timer = set.session.status === "idle" ? "timer not started" : `${set.session.status} at ${formatClock(elapsedMs(set.session, 0))}`;
+  const timer =
+    set.session.status === "idle"
+      ? "timer not started"
+      : `${set.session.status} at ${formatClock(elapsedMs(set.session, 0))}`;
   return `${getSheet(set.sheetId).shortName} · ${plural(stats.total, "problem")} · ${stats.solved} solved · ${timer}`;
 }
 
@@ -256,7 +274,9 @@ function ImportPreviewDialog({
     <Dialog open={preview !== null} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent size="wide" eyebrow="Import preview" initialFocus={focusRef} returnFocus={returnFocus}>
         {/* Keyed by file so each import starts from a fresh plan. */}
-        {preview && <PreviewPanel key={preview.sets[0]?.set.id} preview={preview} focusRef={focusRef} onImported={onImported} />}
+        {preview && (
+          <PreviewPanel key={preview.sets[0]?.set.id} preview={preview} focusRef={focusRef} onImported={onImported} />
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -317,7 +337,8 @@ function PreviewPanel({
           <DialogDescription>
             <p>
               <strong className={styles.fileName}>{preview.fileName}</strong> is valid
-              {preview.format < FORMAT_VERSION ? " (earlier single-set format)" : ""}. Review the sets below, then confirm.
+              {preview.format < FORMAT_VERSION ? " (earlier single-set format)" : ""}. Review the sets below, then
+              confirm.
               {conflicts > 0 &&
                 ` ${conflicts === 1 ? "One set has a name" : `${conflicts} sets have names`} already in use — rename or skip ${conflicts === 1 ? "it" : "them"}.`}{" "}
               Existing sets are never changed.
@@ -346,9 +367,16 @@ function PreviewPanel({
             const error = errors.get(i);
             const id = `${baseId}-${i}`;
             return (
-              <li key={item.set.id} className={styles.planItem} data-action={item.action} data-error={error ? true : undefined}>
+              <li
+                key={item.set.id}
+                className={styles.planItem}
+                data-action={item.action}
+                data-error={error ? true : undefined}
+              >
                 <div className={styles.planHead}>
-                  <span className={`mono ${styles.ref}`} title={`SetID in the file (row ${item.row})`}>{item.ref}</span>
+                  <span className={`mono ${styles.ref}`} title={`SetID in the file (row ${item.row})`}>
+                    {item.ref}
+                  </span>
                   <div className={styles.planText}>
                     <span className={styles.planName}>{item.set.name}</span>
                     <span className={`mono ${styles.planMeta}`}>{setSummary(item.set)}</span>
@@ -457,9 +485,18 @@ function ImportResultsDialog({
                 </DialogDescription>
               </DialogHeader>
               <dl className={styles.resultStats}>
-                <div><dt className="label">Imported</dt><dd className="mono tabular">{results.imported}</dd></div>
-                <div><dt className="label">Renamed</dt><dd className="mono tabular">{results.renamed}</dd></div>
-                <div><dt className="label">Skipped</dt><dd className="mono tabular">{results.skipped}</dd></div>
+                <div>
+                  <dt className="label">Imported</dt>
+                  <dd className="mono tabular">{results.imported}</dd>
+                </div>
+                <div>
+                  <dt className="label">Renamed</dt>
+                  <dd className="mono tabular">{results.renamed}</dd>
+                </div>
+                <div>
+                  <dt className="label">Skipped</dt>
+                  <dd className="mono tabular">{results.skipped}</dd>
+                </div>
               </dl>
               <ul className={styles.resultList} aria-label="Sets in the file">
                 {results.items.map((item) => {
@@ -472,7 +509,9 @@ function ImportResultsDialog({
                         {skipped ? (
                           <>Skipped “{item.set.name}”</>
                         ) : name !== item.set.name ? (
-                          <>“{name}” <span className={styles.muted}>(renamed from “{item.set.name}”)</span></>
+                          <>
+                            “{name}” <span className={styles.muted}>(renamed from “{item.set.name}”)</span>
+                          </>
                         ) : (
                           <>“{name}”</>
                         )}
@@ -529,20 +568,31 @@ function FormatGuideDialog({
               <p>
                 One Excel workbook ({XLSX_EXTENSION}) can hold any number of problem sets in two worksheets:{" "}
                 <code className="mono">{SETS_SHEET.name}</code> lists the sets, and{" "}
-                <code className="mono">{PROBLEMS_SHEET.name}</code> lists every problem. Exports use this same format, so
-                you can export sets, edit them in Excel and import them again.
+                <code className="mono">{PROBLEMS_SHEET.name}</code> lists every problem. Exports use this same format,
+                so you can export sets, edit them in Excel and import them again.
               </p>
             </DialogDescription>
           </DialogHeader>
 
           <section className={styles.link} aria-labelledby={linkId}>
-            <h3 id={linkId} className={styles.sectionTitle}>How SetID links the sheets</h3>
+            <h3 id={linkId} className={styles.sectionTitle}>
+              How SetID links the sheets
+            </h3>
             <p className={styles.sectionText}>
               Give each set a <code className="mono">SetID</code> in {SETS_SHEET.name}, such as{" "}
-              <span className={styles.refTag} data-tone="0">S1</span>. Every row in {PROBLEMS_SHEET.name} with that SetID
-              belongs to that set, so <span className={styles.refTag} data-tone="0">S1</span> problems go to the first set
-              and <span className={styles.refTag} data-tone="1">S2</span> problems to the second, in any row order. SetIDs
-              only link rows inside the file: imported sets get new internal IDs and never replace a set you already have.
+              <span className={styles.refTag} data-tone="0">
+                S1
+              </span>
+              . Every row in {PROBLEMS_SHEET.name} with that SetID belongs to that set, so{" "}
+              <span className={styles.refTag} data-tone="0">
+                S1
+              </span>{" "}
+              problems go to the first set and{" "}
+              <span className={styles.refTag} data-tone="1">
+                S2
+              </span>{" "}
+              problems to the second, in any row order. SetIDs only link rows inside the file: imported sets get new
+              internal IDs and never replace a set you already have.
             </p>
           </section>
 
@@ -551,22 +601,48 @@ function FormatGuideDialog({
           ))}
 
           <section className={styles.section} aria-labelledby={notesId}>
-            <h3 id={notesId} className={styles.sectionTitle}>Good to know</h3>
+            <h3 id={notesId} className={styles.sectionTitle}>
+              Good to know
+            </h3>
             <ul className="dialog__list">
-              <li>Headers go in row 1, spelled exactly as shown, and worksheet names must match too. Column order doesn’t matter; extra columns are ignored.</li>
-              <li>Values are checked by what’s in each cell, not by cell formatting: a number stored as text, such as “12”, is fine.</li>
-              <li>Every SetID in {PROBLEMS_SHEET.name} must exist in {SETS_SHEET.name}, and every set needs at least one problem.</li>
-              <li>Problems are listed Easy → Medium → Hard; Order sets the sequence within each difficulty of a set.</li>
-              <li>The whole workbook is validated before anything is saved. If any row has a problem you’ll see each issue with its row number, and nothing is imported.</li>
-              <li>You’ll see a preview of the sets before confirming. If a name matches a set you already have, or another set in the file, rename or skip it there — existing sets are never overwritten.</li>
+              <li>
+                Headers go in row 1, spelled exactly as shown, and worksheet names must match too. Column order doesn’t
+                matter; extra columns are ignored.
+              </li>
+              <li>
+                Values are checked by what’s in each cell, not by cell formatting: a number stored as text, such as
+                “12”, is fine.
+              </li>
+              <li>
+                Every SetID in {PROBLEMS_SHEET.name} must exist in {SETS_SHEET.name}, and every set needs at least one
+                problem.
+              </li>
+              <li>
+                Problems are listed Easy → Medium → Hard; Order sets the sequence within each difficulty of a set.
+              </li>
+              <li>
+                The whole workbook is validated before anything is saved. If any row has a problem you’ll see each issue
+                with its row number, and nothing is imported.
+              </li>
+              <li>
+                You’ll see a preview of the sets before confirming. If a name matches a set you already have, or another
+                set in the file, rename or skip it there — existing sets are never overwritten.
+              </li>
               <li>Imported timers are never running. A timer that was running at export is saved as Paused.</li>
-              <li>Up to {MAX_SETS} sets per file and {MAX_PROBLEMS} problems per set; files up to {MAX_FILE_BYTES / 1024 / 1024} MB. Blank rows are skipped.</li>
-              <li>Files in the earlier single-set format (ProblemSet, Problems and Session worksheets) can still be imported.</li>
+              <li>
+                Up to {MAX_SETS} sets per file and {MAX_PROBLEMS} problems per set; files up to{" "}
+                {MAX_FILE_BYTES / 1024 / 1024} MB. Blank rows are skipped.
+              </li>
+              <li>
+                Files in the earlier single-set format (ProblemSet, Problems and Session worksheets) can still be
+                imported.
+              </li>
               {DRIVE_ENABLED && (
                 <li>
-                  From Google Drive you can import an .xlsx workbook or a Google Sheet laid out the same way. Exports to Drive
-                  are saved in a “{DRIVE_FOLDER_NAME}” folder in My Drive. This app can only see files it saved there and
-                  files you pick. See the <Link href="/privacy#google-drive">Privacy Policy</Link> for how Drive access is used.
+                  From Google Drive you can import an .xlsx workbook or a Google Sheet laid out the same way. Exports to
+                  Drive are saved in a “{DRIVE_FOLDER_NAME}” folder in My Drive. This app can only see files it saved
+                  there and files you pick. See the <Link href="/privacy#google-drive">Privacy Policy</Link> for how
+                  Drive access is used.
                 </li>
               )}
             </ul>
@@ -591,7 +667,9 @@ function SheetGuide({ spec }: { spec: SheetSpec }) {
         <h3 id={headingId} className={styles.sectionTitle}>
           <span className="mono">{spec.name}</span> worksheet
         </h3>
-        <span className={styles.tag} data-required>Required</span>
+        <span className={styles.tag} data-required>
+          Required
+        </span>
       </div>
       <p className={styles.sectionText}>{spec.description}</p>
 
@@ -614,7 +692,9 @@ function SheetGuide({ spec }: { spec: SheetSpec }) {
             <tr>
               <td />
               {spec.columns.map((c, i) => (
-                <th key={c.key} scope="col">{COLUMN_LETTERS[i]}</th>
+                <th key={c.key} scope="col">
+                  {COLUMN_LETTERS[i]}
+                </th>
               ))}
             </tr>
           </thead>
@@ -637,7 +717,9 @@ function SheetGuide({ spec }: { spec: SheetSpec }) {
             ))}
           </tbody>
         </table>
-        <span className={`mono ${styles.sheetTab}`} aria-hidden="true">{spec.name}</span>
+        <span className={`mono ${styles.sheetTab}`} aria-hidden="true">
+          {spec.name}
+        </span>
       </div>
     </section>
   );

@@ -100,7 +100,8 @@ function Workspace({ set }: { set: ProblemSet }) {
           <div>
             <dt className="label">Solved</dt>
             <dd className="mono tabular">
-              {stats.solved}<span className={styles.of}>/{stats.total}</span>
+              {stats.solved}
+              <span className={styles.of}>/{stats.total}</span>
             </dd>
           </div>
         </dl>
@@ -122,7 +123,9 @@ function Workspace({ set }: { set: ProblemSet }) {
 
         <section className={styles.main} aria-labelledby="problems-title">
           <div className={styles.mainHead}>
-            <h2 id="problems-title" className={styles.mainTitle}>Problems</h2>
+            <h2 id="problems-title" className={styles.mainTitle}>
+              Problems
+            </h2>
             <span className="label">{plural(stats.total, "problem")} · Easy → Hard</span>
           </div>
           {set.session.status === "idle" && (
@@ -155,7 +158,9 @@ function Workspace({ set }: { set: ProblemSet }) {
           setConfirmRestart(false);
         }}
       >
-        <p>All solved statuses and recorded timings for <strong>{set.name}</strong> will be reset:</p>
+        <p>
+          All solved statuses and recorded timings for <strong>{set.name}</strong> will be reset:
+        </p>
         <ul className="dialog__list" style={{ marginTop: 12 }}>
           <li>Every problem is marked unsolved</li>
           <li>Every recorded time is cleared</li>
@@ -195,8 +200,12 @@ function NotFound() {
         It may have been deleted, or it was created in a different browser. Sets are stored locally on each device.
       </p>
       <div className={styles.stateActions}>
-        <Link href="/sets" className="btn btn--primary">View your sets</Link>
-        <Link href="/create" className="btn">Create a set</Link>
+        <Link href="/sets" className="btn btn--primary">
+          View your sets
+        </Link>
+        <Link href="/create" className="btn">
+          Create a set
+        </Link>
       </div>
     </div>
   );
@@ -216,7 +225,9 @@ function Unreadable({ id }: { id: string }) {
         <Button variant="danger" onClick={() => setConfirm(true)}>
           <TrashIcon /> Remove damaged set
         </Button>
-        <Link href="/sets" className="btn">Back to sets</Link>
+        <Link href="/sets" className="btn">
+          Back to sets
+        </Link>
       </div>
       <ConfirmDialog
         open={confirm}

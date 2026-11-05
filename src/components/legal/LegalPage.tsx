@@ -99,11 +99,13 @@ export function LegalPage({
           <p className={styles.related}>
             {related === "privacy" ? (
               <>
-                Please also read our <Link href={LEGAL_LINKS.privacy}>Privacy Policy</Link>, which explains how the Service handles information.
+                Please also read our <Link href={LEGAL_LINKS.privacy}>Privacy Policy</Link>, which explains how the
+                Service handles information.
               </>
             ) : (
               <>
-                Please also read our <Link href={LEGAL_LINKS.terms}>Terms of Service</Link>, which govern your use of the Service.
+                Please also read our <Link href={LEGAL_LINKS.terms}>Terms of Service</Link>, which govern your use of
+                the Service.
               </>
             )}
           </p>

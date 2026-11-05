@@ -39,7 +39,14 @@ import {
 } from "@/lib/generate";
 import { saveSet } from "@/lib/problem-sets";
 import { CF_RATINGS } from "@/lib/sources/codeforces";
-import { DIFFICULTIES, DIFFICULTY_LABEL, type CatalogProblem, type Difficulty, type DifficultyCounts, type SheetId } from "@/lib/types";
+import {
+  DIFFICULTIES,
+  DIFFICULTY_LABEL,
+  type CatalogProblem,
+  type Difficulty,
+  type DifficultyCounts,
+  type SheetId,
+} from "@/lib/types";
 import styles from "./CreateSetForm.module.css";
 
 type Catalog =
@@ -100,7 +107,9 @@ export function CreateSetForm() {
   const sheet = SHEETS.find((s) => s.id === sheetId);
   const byRating = sheet?.selectBy === "rating";
   const total = byRating
-    ? Number.isFinite(ratedCount) ? ratedCount : 0
+    ? Number.isFinite(ratedCount)
+      ? ratedCount
+      : 0
     : DIFFICULTIES.reduce((s, d) => s + (Number.isFinite(counts[d]) ? counts[d] : 0), 0);
 
   // Load the selected sheet so availability can be shown and validated up front.
@@ -112,7 +121,11 @@ export function CreateSetForm() {
       (problems) => !cancelled && setCatalog({ status: "ready", sheetId, problems }),
       (err: unknown) =>
         !cancelled &&
-        setCatalog({ status: "error", sheetId, message: err instanceof Error ? err.message : "Couldn't load problems." }),
+        setCatalog({
+          status: "error",
+          sheetId,
+          message: err instanceof Error ? err.message : "Couldn't load problems.",
+        }),
     );
     return () => {
       cancelled = true;
@@ -134,7 +147,9 @@ export function CreateSetForm() {
   const available = pool ? countByDifficulty(pool) : undefined;
   const ratedAvailable = pool ? pool.filter((p) => inRatingRange(p, ratingMin, ratingMax)).length : undefined;
   const validate = (): FieldErrors =>
-    byRating ? validateRatedInput({ name, sheetId, ...rated }, ratedAvailable) : validateInput({ name, sheetId, counts }, available);
+    byRating
+      ? validateRatedInput({ name, sheetId, ...rated }, ratedAvailable)
+      : validateInput({ name, sheetId, counts }, available);
   const errors: FieldErrors = attempted ? validate() : {};
   // Count problems (e.g. more than the sheet has) are flagged immediately, not only after submit.
   const liveErrors: FieldErrors = attempted
@@ -257,7 +272,9 @@ export function CreateSetForm() {
               <span>
                 <strong>Only new problems</strong>
                 <span className="field__hint">
-                  {" "}— skip the {usedCount === null ? "" : `${usedCount} `}problems already in your other {sheet?.shortName} sets.
+                  {" "}
+                  — skip the {usedCount === null ? "" : `${usedCount} `}problems already in your other{" "}
+                  {sheet?.shortName} sets.
                 </span>
               </span>
             </label>
@@ -294,7 +311,11 @@ export function CreateSetForm() {
                     key={p.label}
                     size="sm"
                     onClick={() => {
-                      setRawCounts({ easy: String(p.counts.easy), medium: String(p.counts.medium), hard: String(p.counts.hard) });
+                      setRawCounts({
+                        easy: String(p.counts.easy),
+                        medium: String(p.counts.medium),
+                        hard: String(p.counts.hard),
+                      });
                       setSubmitError(null);
                     }}
                   >
@@ -449,7 +470,11 @@ function RatingFields({
         <FieldsetLegend className="visually-hidden">Rating range and number of problems</FieldsetLegend>
         <div className={styles.counts}>
           {ends.map((e) => (
-            <div key={e.id} className={`${styles.count} ${styles.countRated}`} data-invalid={errors.rating ? "" : undefined}>
+            <div
+              key={e.id}
+              className={`${styles.count} ${styles.countRated}`}
+              data-invalid={errors.rating ? "" : undefined}
+            >
               <Select items={RATING_ITEMS} value={e.value} onValueChange={(v) => v !== null && e.set(v)}>
                 <SelectLabel className={styles.countLabel}>{e.label} rating</SelectLabel>
                 <SelectTrigger

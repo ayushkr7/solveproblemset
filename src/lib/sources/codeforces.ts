@@ -30,7 +30,8 @@ export const CF_QUALITY = {
   minSolvedPercentile: 0.25,
 } as const;
 
-const REGULAR_ROUND = /codeforces round|educational codeforces|global round|codeton|good bye|hello 20\d\d|pinely|\bdiv\. ?[1-4]\b/i;
+const REGULAR_ROUND =
+  /codeforces round|educational codeforces|global round|codeton|good bye|hello 20\d\d|pinely|\bdiv\. ?[1-4]\b/i;
 const IRREGULAR_ROUND = /unrated|april fools|kotlin|testing round|q#|language round|mirror/i;
 
 export function isRegularRound(name: string): boolean {
@@ -88,9 +89,7 @@ export function codeforcesCatalog(problemset: CfProblemset, contests: readonly C
     contests
       .filter(
         (c) =>
-          c.phase === "FINISHED" &&
-          (c.startTimeSeconds ?? 0) >= CF_QUALITY.sinceEpochSeconds &&
-          isRegularRound(c.name),
+          c.phase === "FINISHED" && (c.startTimeSeconds ?? 0) >= CF_QUALITY.sinceEpochSeconds && isRegularRound(c.name),
       )
       .map((c) => c.id),
   );
@@ -99,14 +98,18 @@ export function codeforcesCatalog(problemset: CfProblemset, contests: readonly C
   const eligible = problemset.problems.flatMap((p) => {
     const { contestId, rating } = p;
     if (contestId === undefined || !regular.has(contestId)) return [];
-    if (p.type !== "PROGRAMMING" || typeof rating !== "number" || rating < CF_RATING_MIN || rating > CF_RATING_MAX) return [];
+    if (p.type !== "PROGRAMMING" || typeof rating !== "number" || rating < CF_RATING_MIN || rating > CF_RATING_MAX)
+      return [];
     if (!Array.isArray(p.tags) || p.tags.includes("*special") || typeof p.name !== "string" || !p.name) return [];
     return [{ p, contestId, rating, solved: solved.get(`${contestId}/${p.index}`) ?? 0 }];
   });
 
   const floorByRating = new Map<number, number>();
   for (const r of CF_RATINGS) {
-    const counts = eligible.filter((e) => e.rating === r).map((e) => e.solved).sort((a, b) => a - b);
+    const counts = eligible
+      .filter((e) => e.rating === r)
+      .map((e) => e.solved)
+      .sort((a, b) => a - b);
     floorByRating.set(r, keepFrom(counts, CF_QUALITY.minSolvedPercentile));
   }
 
@@ -133,7 +136,8 @@ async function call<T>(method: string): Promise<T> {
   const res = await fetch(`${CODEFORCES_API}/${method}`, { cache: "no-store", signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`Codeforces ${method}: HTTP ${res.status}`);
   const body = (await res.json()) as { status?: string; comment?: string; result?: T };
-  if (body.status !== "OK" || body.result === undefined) throw new Error(`Codeforces ${method}: ${body.comment ?? "bad response"}`);
+  if (body.status !== "OK" || body.result === undefined)
+    throw new Error(`Codeforces ${method}: ${body.comment ?? "bad response"}`);
   return body.result;
 }
 

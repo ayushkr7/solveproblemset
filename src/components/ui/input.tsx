@@ -8,7 +8,10 @@
 import { Input as InputPrimitive } from "@base-ui/react/input";
 import type { ComponentProps } from "react";
 
-function Input({ className, ...props }: Omit<ComponentProps<typeof InputPrimitive>, "className"> & { className?: string }) {
+function Input({
+  className,
+  ...props
+}: Omit<ComponentProps<typeof InputPrimitive>, "className"> & { className?: string }) {
   return <InputPrimitive data-slot="input" className={className} {...props} />;
 }
 

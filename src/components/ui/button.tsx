@@ -23,7 +23,12 @@ interface VariantProps {
   className?: string;
 }
 
-function buttonVariants({ variant = "default", size = "default", block = false, className }: VariantProps = {}): string {
+function buttonVariants({
+  variant = "default",
+  size = "default",
+  block = false,
+  className,
+}: VariantProps = {}): string {
   if (variant === "bare") return className ?? "";
   return cn(
     "btn",

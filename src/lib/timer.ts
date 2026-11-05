@@ -52,21 +52,13 @@ function withSession(set: ProblemSet, session: SessionState, now: number): Probl
 
 export function start(set: ProblemSet, now: number): ProblemSet {
   if (set.session.status !== "idle") return set;
-  return withSession(
-    set,
-    { ...initialSession(), status: "running", runningSince: now, startedAt: now },
-    now,
-  );
+  return withSession(set, { ...initialSession(), status: "running", runningSince: now, startedAt: now }, now);
 }
 
 export function pause(set: ProblemSet, now: number): ProblemSet {
   const s = set.session;
   if (s.status !== "running") return set;
-  return withSession(
-    set,
-    { ...s, status: "paused", accumulatedMs: elapsedMs(s, now), runningSince: null },
-    now,
-  );
+  return withSession(set, { ...s, status: "paused", accumulatedMs: elapsedMs(s, now), runningSince: null }, now);
 }
 
 /** Continue from paused or stopped without touching banked time or progress. */
@@ -122,7 +114,12 @@ function markSolved(set: ProblemSet, target: SetProblem, now: number): ProblemSe
   const s = set.session;
   // No session yet: record the solve without inventing a duration.
   if (s.status === "idle") {
-    return replaceProblem(set, { ...target, solved: true, solvedAt: now, timeMs: null, solvedAtElapsedMs: null, timeEdited: false }, s, now);
+    return replaceProblem(
+      set,
+      { ...target, solved: true, solvedAt: now, timeMs: null, solvedAtElapsedMs: null, timeEdited: false },
+      s,
+      now,
+    );
   }
   const elapsed = elapsedMs(s, now);
   const duration = Math.max(0, elapsed - s.lastSolveMarkMs);
@@ -148,9 +145,7 @@ function markUnsolved(set: ProblemSet, target: SetProblem, now: number): Problem
     // Roll the reference back to the latest remaining timed solve (or session start).
     lastSolveMarkMs = set.problems.reduce(
       (max, p) =>
-        p.id !== target.id && p.solved && p.solvedAtElapsedMs !== null
-          ? Math.max(max, p.solvedAtElapsedMs)
-          : max,
+        p.id !== target.id && p.solved && p.solvedAtElapsedMs !== null ? Math.max(max, p.solvedAtElapsedMs) : max,
       0,
     );
   }
@@ -161,19 +156,11 @@ function markUnsolved(set: ProblemSet, target: SetProblem, now: number): Problem
 export function editTime(set: ProblemSet, problemId: string, minutes: number, now: number): ProblemSet {
   const target = set.problems.find((p) => p.id === problemId);
   if (!target || !target.solved || !Number.isFinite(minutes) || minutes < 0) return set;
-  return replaceProblem(
-    set,
-    { ...target, timeMs: Math.round(minutes * 60_000), timeEdited: true },
-    set.session,
-    now,
-  );
+  return replaceProblem(set, { ...target, timeMs: Math.round(minutes * 60_000), timeEdited: true }, set.session, now);
 }
 
 function replaceProblem(set: ProblemSet, next: SetProblem, session: SessionState, now: number): ProblemSet {
-  return touch(
-    { ...set, session, problems: set.problems.map((p) => (p.id === next.id ? next : p)) },
-    now,
-  );
+  return touch({ ...set, session, problems: set.problems.map((p) => (p.id === next.id ? next : p)) }, now);
 }
 
 export interface SetStats {

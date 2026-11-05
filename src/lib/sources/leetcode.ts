@@ -43,7 +43,12 @@ export function leetCodeUrl(slug: string): string {
 
 export function isQualityQuestion(q: LcQuestion): boolean {
   const votes = q.likes + q.dislikes;
-  return !q.isPaidOnly && q.likes >= LEETCODE_QUALITY.minLikes && votes > 0 && q.likes / votes >= LEETCODE_QUALITY.minLikeRatio;
+  return (
+    !q.isPaidOnly &&
+    q.likes >= LEETCODE_QUALITY.minLikes &&
+    votes > 0 &&
+    q.likes / votes >= LEETCODE_QUALITY.minLikeRatio
+  );
 }
 
 /** The practice-worthy questions, in LeetCode's numbering. */
@@ -68,7 +73,10 @@ export function leetCodeCatalog(questions: readonly LcQuestion[]): CatalogProble
         url,
         leetCodeUrl: url,
         difficulty: DIFFICULTY[q.difficulty]!,
-        topic: (q.topicTags ?? []).slice(0, 3).map((t) => t.name).join(", "),
+        topic: (q.topicTags ?? [])
+          .slice(0, 3)
+          .map((t) => t.name)
+          .join(", "),
         order: i + 1,
       };
     });
@@ -87,9 +95,13 @@ async function page(skip: number): Promise<{ totalNum: number; data: LcQuestion[
     signal: AbortSignal.timeout(20_000),
   });
   if (!res.ok) throw new Error(`LeetCode problem list: HTTP ${res.status}`);
-  const body = (await res.json()) as { data?: { questionList?: { totalNum: number; data: LcQuestion[] } }; errors?: unknown };
+  const body = (await res.json()) as {
+    data?: { questionList?: { totalNum: number; data: LcQuestion[] } };
+    errors?: unknown;
+  };
   const list = body.data?.questionList;
-  if (!list || !Array.isArray(list.data) || typeof list.totalNum !== "number") throw new Error("LeetCode problem list: unexpected response");
+  if (!list || !Array.isArray(list.data) || typeof list.totalNum !== "number")
+    throw new Error("LeetCode problem list: unexpected response");
   return list;
 }
 

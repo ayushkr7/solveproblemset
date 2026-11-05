@@ -54,8 +54,7 @@ export interface ImportedSet {
 }
 
 export type ImportResult =
-  | { ok: true; format: number; sets: ImportedSet[]; warnings: string[] }
-  | { ok: false; errors: string[] };
+  { ok: true; format: number; sets: ImportedSet[]; warnings: string[] } | { ok: false; errors: string[] };
 
 const MAX_REPORTED_ERRORS = 50;
 
@@ -101,9 +100,13 @@ function cellNumber(c: Cell): number | "blank" | "invalid" {
 /** Short, quoted rendering of a cell for error messages. */
 function show(c: Cell): string {
   const s =
-    c instanceof Date ? (Number.isNaN(c.getTime()) ? "invalid date" : c.toISOString())
-    : typeof c === "object" && c !== null ? c.text || c.href
-    : String(c);
+    c instanceof Date
+      ? Number.isNaN(c.getTime())
+        ? "invalid date"
+        : c.toISOString()
+      : typeof c === "object" && c !== null
+        ? c.text || c.href
+        : String(c);
   return `“${s.length > 40 ? `${s.slice(0, 39)}…` : s}”`;
 }
 
@@ -193,7 +196,9 @@ function readSheet<K extends string>(
 
   const header = table.rows[0]?.row === 1 ? table.rows[0] : undefined;
   if (!header || header.cells.every(isBlank)) {
-    errors.push(`${spec.name}: row 1 must contain the column headers (${spec.columns.map((c) => c.header).join(", ")}).`);
+    errors.push(
+      `${spec.name}: row 1 must contain the column headers (${spec.columns.map((c) => c.header).join(", ")}).`,
+    );
     return null;
   }
 
@@ -220,18 +225,20 @@ function readSheet<K extends string>(
     const i = found.get(c.header);
     if (i !== undefined) index.set(c.key, i);
   }
-  return table.rows
-    .filter((r) => r.row > 1)
-    .map((r) => ({
-      row: r.row,
-      get: (key: K) => {
-        const i = index.get(key);
-        return i === undefined ? null : (r.cells[i] ?? null);
-      },
-      at: () => `${spec.name}, row ${r.row}`,
-    }))
-    // Rows with nothing in the schema's columns (spacing, notes elsewhere) are skipped.
-    .filter((rec) => !spec.columns.every((c) => isBlank(rec.get(c.key))));
+  return (
+    table.rows
+      .filter((r) => r.row > 1)
+      .map((r) => ({
+        row: r.row,
+        get: (key: K) => {
+          const i = index.get(key);
+          return i === undefined ? null : (r.cells[i] ?? null);
+        },
+        at: () => `${spec.name}, row ${r.row}`,
+      }))
+      // Rows with nothing in the schema's columns (spacing, notes elsewhere) are skipped.
+      .filter((rec) => !spec.columns.every((c) => isBlank(rec.get(c.key))))
+  );
 }
 
 /** The single data row of a one-row sheet (format 1's ProblemSet and Session). */
@@ -279,7 +286,9 @@ function checkVersion(recs: Rec<SetKey>[], errors: string[]): boolean {
     const v = cellNumber(cell);
     if (v === "blank") continue;
     if (v === "invalid" || !Number.isInteger(v) || v < 1) {
-      errors.push(`${rec.at("version")}: FormatVersion ${show(cell)} must be a whole number such as ${FORMAT_VERSION}.`);
+      errors.push(
+        `${rec.at("version")}: FormatVersion ${show(cell)} must be a whole number such as ${FORMAT_VERSION}.`,
+      );
       return false;
     }
     if (v > FORMAT_VERSION) {
@@ -293,7 +302,10 @@ function checkVersion(recs: Rec<SetKey>[], errors: string[]): boolean {
   return true;
 }
 
-const TIMER_STATE_KEY = Object.fromEntries(TIMER_STATE_VALUES.map((v) => [v, v])) as Record<TimerStateValue, TimerStateValue>;
+const TIMER_STATE_KEY = Object.fromEntries(TIMER_STATE_VALUES.map((v) => [v, v])) as Record<
+  TimerStateValue,
+  TimerStateValue
+>;
 
 function parseSetFields(rec: Rec<SetKey>, now: number, errors: string[], warnings: string[]): SetFields | null {
   const before = errors.length;
@@ -302,7 +314,8 @@ function parseSetFields(rec: Rec<SetKey>, now: number, errors: string[], warning
   const name = cellText(nameCell);
   if (name === null) errors.push(`${rec.at("name")}: SetName must be text, not ${show(nameCell)}.`);
   else if (!name) errors.push(`${rec.at("name")}: SetName is required.`);
-  else if (name.length > NAME_MAX) errors.push(`${rec.at("name")}: SetName is ${name.length} characters; keep it to ${NAME_MAX} or fewer.`);
+  else if (name.length > NAME_MAX)
+    errors.push(`${rec.at("name")}: SetName is ${name.length} characters; keep it to ${NAME_MAX} or fewer.`);
 
   const sourceCell = rec.get("source");
   const sheetId = lookup(sourceCell, SOURCE_SHEET_LABEL);
@@ -326,7 +339,9 @@ function parseSetFields(rec: Rec<SetKey>, now: number, errors: string[], warning
   }
 
   const session = parseSession(rec, now, errors, warnings);
-  return errors.length === before && name && sheetId && createdAt && session ? { name, sheetId, createdAt, session } : null;
+  return errors.length === before && name && sheetId && createdAt && session
+    ? { name, sheetId, createdAt, session }
+    : null;
 }
 
 function parseSession(rec: Rec<SetKey>, now: number, errors: string[], warnings: string[]): SessionState | null {
@@ -353,11 +368,14 @@ function parseSession(rec: Rec<SetKey>, now: number, errors: string[], warnings:
   let state = given;
   if (!state) {
     state = accumulatedMs > 0 ? "Paused" : "NotStarted";
-    if (accumulatedMs > 0) warnings.push(`${rec.at("state")}: TimerState is blank, so the timer was imported as Paused.`);
+    if (accumulatedMs > 0)
+      warnings.push(`${rec.at("state")}: TimerState is blank, so the timer was imported as Paused.`);
   }
   if (state === "NotStarted") {
     if (accumulatedMs > 0) {
-      errors.push(`${rec.at("state")}: a NotStarted timer must have ElapsedSeconds = 0. Use Paused or Stopped to keep the time.`);
+      errors.push(
+        `${rec.at("state")}: a NotStarted timer must have ElapsedSeconds = 0. Use Paused or Stopped to keep the time.`,
+      );
       return null;
     }
     return initialSession();
@@ -386,7 +404,8 @@ function parseProblem(rec: Rec<ProblemKey>, errors: string[]): ProblemFields | n
   const title = cellText(titleCell);
   if (title === null) errors.push(`${rec.at("title")}: ProblemName must be text, not ${show(titleCell)}.`);
   else if (!title) errors.push(`${rec.at("title")}: ProblemName is required.`);
-  else if (title.length > PROBLEM_NAME_MAX) errors.push(`${rec.at("title")}: ProblemName is longer than ${PROBLEM_NAME_MAX} characters.`);
+  else if (title.length > PROBLEM_NAME_MAX)
+    errors.push(`${rec.at("title")}: ProblemName is longer than ${PROBLEM_NAME_MAX} characters.`);
 
   const urlCell = rec.get("url");
   const url = cellUrl(urlCell);
@@ -427,9 +446,11 @@ function parseProblem(rec: Rec<ProblemKey>, errors: string[]): ProblemFields | n
   const minutesCell = rec.get("minutes");
   const minutes = cellNumber(minutesCell);
   if (minutes === "blank") errors.push(`${rec.at("minutes")}: TimeMinutes is required. Use 0 if no time was recorded.`);
-  else if (minutes === "invalid") errors.push(`${rec.at("minutes")}: TimeMinutes ${show(minutesCell)} must be a number, e.g. 12.5.`);
+  else if (minutes === "invalid")
+    errors.push(`${rec.at("minutes")}: TimeMinutes ${show(minutesCell)} must be a number, e.g. 12.5.`);
   else if (minutes < 0) errors.push(`${rec.at("minutes")}: TimeMinutes can't be negative.`);
-  else if (minutes > TIME_MINUTES_MAX) errors.push(`${rec.at("minutes")}: TimeMinutes can be at most ${TIME_MINUTES_MAX}.`);
+  else if (minutes > TIME_MINUTES_MAX)
+    errors.push(`${rec.at("minutes")}: TimeMinutes can be at most ${TIME_MINUTES_MAX}.`);
 
   const orderCell = rec.get("order");
   const order = cellNumber(orderCell);
@@ -445,8 +466,13 @@ function parseProblem(rec: Rec<ProblemKey>, errors: string[]): ProblemFields | n
 
   const ratingCell = rec.get("rating");
   const rating = cellNumber(ratingCell);
-  if (rating !== "blank" && (rating === "invalid" || !Number.isSafeInteger(rating) || rating < 1 || rating > RATING_MAX)) {
-    errors.push(`${rec.at("rating")}: Rating ${show(ratingCell)} must be a whole number from 1 to ${RATING_MAX}, or blank.`);
+  if (
+    rating !== "blank" &&
+    (rating === "invalid" || !Number.isSafeInteger(rating) || rating < 1 || rating > RATING_MAX)
+  ) {
+    errors.push(
+      `${rec.at("rating")}: Rating ${show(ratingCell)} must be a whole number from 1 to ${RATING_MAX}, or blank.`,
+    );
   }
 
   if (errors.length > before) return null;
@@ -485,12 +511,7 @@ function rowList(rows: number[]): string {
 // ---------------------------------------------------------------------------
 // Workbook assembly
 
-function assemble(
-  setRecs: Rec<SetKey>[],
-  problemRecs: Rec<ProblemKey>[],
-  format: number,
-  now: number,
-): ImportResult {
+function assemble(setRecs: Rec<SetKey>[], problemRecs: Rec<ProblemKey>[], format: number, now: number): ImportResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -558,9 +579,13 @@ function assemble(
     if (ref === null || byRef.get(refKey(ref)) !== i) return;
     const rec = setRecs[i]!;
     if (referenced[i] === 0) {
-      errors.push(`${rec.at("setId")}: set “${ref}” has no problems. Add its problems to the ${PROBLEMS_SHEET.name} sheet with SetID ${ref}.`);
+      errors.push(
+        `${rec.at("setId")}: set “${ref}” has no problems. Add its problems to the ${PROBLEMS_SHEET.name} sheet with SetID ${ref}.`,
+      );
     } else if (referenced[i]! > MAX_PROBLEMS) {
-      errors.push(`${rec.at("setId")}: set “${ref}” has ${referenced[i]} problems; a set can hold at most ${MAX_PROBLEMS}.`);
+      errors.push(
+        `${rec.at("setId")}: set “${ref}” has ${referenced[i]} problems; a set can hold at most ${MAX_PROBLEMS}.`,
+      );
     }
   });
 
@@ -607,7 +632,8 @@ function parseV1(tables: readonly SheetTable[], now: number): ImportResult {
   const sessionRows = readSheet(tables, V1_SESSION_SHEET, errors, false);
   if (errors.length > 0 || !setRows || !problemRows) return importFailure(...errors);
 
-  if (setRows.length === 0) return importFailure(`${V1_SET_SHEET.name}: add the set's details in row 2, below the headers.`);
+  if (setRows.length === 0)
+    return importFailure(`${V1_SET_SHEET.name}: add the set's details in row 2, below the headers.`);
   const setRec = singleRow(setRows, V1_SET_SHEET, errors);
   const sessionRec = sessionRows ? singleRow(sessionRows, V1_SESSION_SHEET, errors) : null;
   if (!setRec || errors.length > 0) return importFailure(...errors);
@@ -619,11 +645,14 @@ function parseV1(tables: readonly SheetTable[], now: number): ImportResult {
   const set: Rec<SetKey> = {
     row: setRec.row,
     get: (k) =>
-      k === "setId" ? REF
-      : k === "elapsed" || k === "state" ? (sessionRec?.get(k) ?? null)
-      : k === "version" ? null
-      : setRec.get(k),
-    at: (k) => (k === "elapsed" || k === "state") && sessionRec ? sessionRec.at(k) : setRec.at("name"),
+      k === "setId"
+        ? REF
+        : k === "elapsed" || k === "state"
+          ? (sessionRec?.get(k) ?? null)
+          : k === "version"
+            ? null
+            : setRec.get(k),
+    at: (k) => ((k === "elapsed" || k === "state") && sessionRec ? sessionRec.at(k) : setRec.at("name")),
   };
   const problems: Rec<ProblemKey>[] = problemRows.map((rec) => ({
     row: rec.row,

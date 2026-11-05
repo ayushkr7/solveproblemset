@@ -32,7 +32,10 @@ function DialogClose(props: ComponentProps<typeof DialogPrimitive.Close>) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
-function DialogOverlay({ className, ...props }: ComponentProps<typeof DialogPrimitive.Backdrop> & { className?: string }) {
+function DialogOverlay({
+  className,
+  ...props
+}: ComponentProps<typeof DialogPrimitive.Backdrop> & { className?: string }) {
   return <DialogPrimitive.Backdrop data-slot="dialog-overlay" className={cn("dialog-overlay", className)} {...props} />;
 }
 
@@ -41,7 +44,13 @@ function DialogOverlay({ className, ...props }: ComponentProps<typeof DialogPrim
 
 /** A usable focus target: still in the document, enabled and not inside an inert (closed or background) region. */
 function focusable(el: Element | null | undefined): el is HTMLElement {
-  return el instanceof HTMLElement && el.isConnected && el !== document.body && !el.matches(":disabled") && !el.closest("[inert]");
+  return (
+    el instanceof HTMLElement &&
+    el.isConnected &&
+    el !== document.body &&
+    !el.matches(":disabled") &&
+    !el.closest("[inert]")
+  );
 }
 
 const OPEN_POPUP = '[data-slot$="dialog-content"][data-open]';
@@ -94,7 +103,10 @@ function usePopupFocus({
 
 // ---------------------------------------------------------------------------
 
-interface DialogContentProps extends Omit<ComponentProps<typeof DialogPrimitive.Popup>, "initialFocus" | "finalFocus" | "className"> {
+interface DialogContentProps extends Omit<
+  ComponentProps<typeof DialogPrimitive.Popup>,
+  "initialFocus" | "finalFocus" | "className"
+> {
   className?: string;
   /** Small mono label in the header bar, e.g. "Import preview". */
   eyebrow?: ReactNode;
@@ -166,7 +178,10 @@ function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimit
 }
 
 /** Rendered as a <div> so it can hold paragraphs and lists. */
-function DialogDescription({ className, ...props }: ComponentProps<typeof DialogPrimitive.Description> & { className?: string }) {
+function DialogDescription({
+  className,
+  ...props
+}: ComponentProps<typeof DialogPrimitive.Description> & { className?: string }) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

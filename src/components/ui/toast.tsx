@@ -30,7 +30,12 @@ function Toaster() {
     <ToastPrimitive.Portal>
       <ToastPrimitive.Viewport data-slot="toast-viewport" className="toast-viewport">
         {toasts.map((t) => (
-          <ToastPrimitive.Root key={t.id} toast={t} data-slot="toast" className={cn("toast", t.type === "error" && "toast--error")}>
+          <ToastPrimitive.Root
+            key={t.id}
+            toast={t}
+            data-slot="toast"
+            className={cn("toast", t.type === "error" && "toast--error")}
+          >
             {t.type === "error" ? <AlertIcon width={16} height={16} /> : <CheckIcon width={16} height={16} />}
             <ToastPrimitive.Title data-slot="toast-title" className="toast__title" />
             {t.data?.link && (

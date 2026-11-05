@@ -1,7 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as t from "../src/lib/timer";
-import { buildProblemSet, compareProblems, pickProblems, validateInput, InsufficientProblemsError } from "../src/lib/generate";
+import {
+  buildProblemSet,
+  compareProblems,
+  pickProblems,
+  validateInput,
+  InsufficientProblemsError,
+} from "../src/lib/generate";
 import type { CatalogProblem, ProblemSet } from "../src/lib/types";
 
 const MIN = 60_000;
@@ -104,7 +110,10 @@ test("restart resets progress but keeps metadata", () => {
   assert.equal(s.id, original.id);
   assert.equal(s.name, original.name);
   assert.equal(s.createdAt, original.createdAt);
-  assert.deepEqual(s.problems.map((p) => [p.id, p.url, p.difficulty]), original.problems.map((p) => [p.id, p.url, p.difficulty]));
+  assert.deepEqual(
+    s.problems.map((p) => [p.id, p.url, p.difficulty]),
+    original.problems.map((p) => [p.id, p.url, p.difficulty]),
+  );
 });
 
 test("editTime changes only the recorded time", () => {
@@ -134,7 +143,10 @@ test("invalid transitions are no-ops", () => {
 test("generation validates input and availability", () => {
   const errs = validateInput({ name: "  ", sheetId: null, counts: { easy: 0, medium: 0, hard: 0 } });
   assert.ok(errs.name && errs.sheetId && errs.counts);
-  const over = validateInput({ name: "x", sheetId: "striver-a2z", counts: { easy: 3, medium: 0, hard: 0 } }, { easy: 2, medium: 2, hard: 1 });
+  const over = validateInput(
+    { name: "x", sheetId: "striver-a2z", counts: { easy: 3, medium: 0, hard: 0 } },
+    { easy: 2, medium: 2, hard: 1 },
+  );
   assert.ok(over.easy);
   assert.throws(() => pickProblems(catalog, { easy: 3, medium: 0, hard: 0 }), InsufficientProblemsError);
 });

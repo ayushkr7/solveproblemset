@@ -37,7 +37,11 @@ function toCell(v: unknown): Cell {
   if ("result" in o) return toCell(o.result);
   if ("formula" in o || "sharedFormula" in o) return null;
   if (Array.isArray(o.richText)) {
-    return o.richText.map((r: unknown) => (r && typeof (r as { text?: unknown }).text === "string" ? (r as { text: string }).text : "")).join("");
+    return o.richText
+      .map((r: unknown) =>
+        r && typeof (r as { text?: unknown }).text === "string" ? (r as { text: string }).text : "",
+      )
+      .join("");
   }
   if (typeof o.hyperlink === "string") {
     const text = toCell(o.text);

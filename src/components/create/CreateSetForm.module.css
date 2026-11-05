@@ -3,11 +3,19 @@
   gap: 32px;
   align-items: start;
 }
+
 @media (min-width: 1024px) {
-  .layout { grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr); gap: 48px; }
+  .layout {
+    grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr);
+    gap: 48px;
+  }
 }
 
-.sections { display: grid; gap: 0; min-width: 0; }
+.sections {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
 
 .section {
   display: grid;
@@ -15,8 +23,14 @@
   padding-block: 28px;
   border-bottom: 1px solid var(--rule);
 }
-.section:first-child { padding-top: 0; }
-.section:last-child { border-bottom: 0; }
+
+.section:first-child {
+  padding-top: 0;
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
 
 .sectionTitle {
   display: flex;
@@ -25,15 +39,37 @@
   font-size: 1.375rem;
   letter-spacing: -0.02em;
 }
-.sectionTitle :global(.mono) { font-size: 0.8125rem; font-weight: 500; color: var(--accent); }
 
-.fieldMeta { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.sectionTitle :global(.mono) {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--accent);
+}
 
-.fieldset { border: 0; padding: 0; min-width: 0; }
+.fieldMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
 
 /* Sheet radio cards */
-.sheets { display: grid; gap: 12px; }
-@media (min-width: 640px) { .sheets { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); } }
+.sheets {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .sheets {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
 
 .sheet {
   position: relative;
@@ -43,18 +79,33 @@
   border: 1px solid var(--rule-strong);
   background: var(--surface);
   cursor: pointer;
-  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    box-shadow 0.15s;
 }
-.sheet:hover { background: var(--surface-hover); }
+
+.sheet:hover {
+  background: var(--surface-hover);
+}
+
 .sheet[data-checked] {
   border-color: var(--accent);
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent);
 }
-.sheet:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 
+.sheet:has(:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
 
-.sheetTop { display: flex; justify-content: space-between; align-items: center; }
+.sheetTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .sheetCode {
   padding: 2px 8px;
   border: 1px solid currentColor;
@@ -62,36 +113,73 @@
   font-weight: 600;
   color: var(--accent);
 }
+
 .radioDot {
-  width: 20px; height: 20px;
+  width: 20px;
+  height: 20px;
   border: 1.5px solid var(--ink-2);
   border-radius: 50%;
-  display: grid; place-items: center;
+  display: grid;
+  place-items: center;
 }
+
 /* The dot is Base UI's focusable role="radio"; the whole card shows the focus ring. */
-.radioDot:focus-visible { outline: none; }
-.sheet[data-checked] .radioDot { border-color: var(--accent); }
+.radioDot:focus-visible {
+  outline: none;
+}
+
+.sheet[data-checked] .radioDot {
+  border-color: var(--accent);
+}
+
 .sheet[data-checked] .radioDot::after {
   content: "";
-  width: 10px; height: 10px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--accent);
 }
-.sheetTags { display: flex; align-items: center; gap: 8px; }
-.liveTag { color: var(--ink-2); }
+
+.sheetTags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.liveTag {
+  color: var(--ink-2);
+}
+
 .liveTag::before {
   content: "";
   display: inline-block;
-  width: 6px; height: 6px;
+  width: 6px;
+  height: 6px;
   margin-right: 6px;
   border-radius: 50%;
   background: var(--accent);
   vertical-align: 1px;
 }
-.sheetName { font-weight: 600; font-size: 1.0625rem; letter-spacing: -0.01em; }
-.sheetDesc { font-size: 0.875rem; color: var(--ink-2); }
 
-.noticeBody { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; flex: 1; }
+.sheetName {
+  font-weight: 600;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+}
+
+.sheetDesc {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.noticeBody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+}
 
 .check {
   display: flex;
@@ -102,11 +190,13 @@
   cursor: pointer;
   font-size: 0.9375rem;
 }
+
 /* Base UI checkbox drawn like the native accent-colour box it replaces. */
 .checkBox {
   display: grid;
   place-items: center;
-  width: 20px; height: 20px;
+  width: 20px;
+  height: 20px;
   margin-top: 1px;
   flex: none;
   border: 1.5px solid var(--ink-2);
@@ -114,20 +204,60 @@
   background: var(--surface);
   color: transparent;
 }
-.checkBox svg { width: 14px; height: 14px; stroke-width: 2.5; }
-.checkBox :global(.checkbox__dash) { display: none; }
-.check:hover .checkBox { border-color: var(--accent); }
-.checkBox[data-checked] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.checkBox:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.checkBox svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
+}
+
+.checkBox :global(.checkbox__dash) {
+  display: none;
+}
+
+.check:hover .checkBox {
+  border-color: var(--accent);
+}
+
+.checkBox[data-checked] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.checkBox:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
 
 /* Presets */
-.presets { display: flex; flex-wrap: wrap; gap: 8px; }
-.presetSpec { color: var(--ink-3); font-size: 0.6875rem; letter-spacing: 0; }
-.presets :global(.btn:hover) .presetSpec { color: inherit; }
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.presetSpec {
+  color: var(--ink-3);
+  font-size: 0.6875rem;
+  letter-spacing: 0;
+}
+
+.presets :global(.btn:hover) .presetSpec {
+  color: inherit;
+}
 
 /* Count steppers */
-.counts { display: grid; gap: 12px; }
-@media (min-width: 560px) { .counts { grid-template-columns: repeat(3, 1fr); } }
+.counts {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 560px) {
+  .counts {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 .count {
   display: grid;
@@ -138,7 +268,11 @@
   background: var(--surface);
   min-width: 0;
 }
-.count[data-invalid] { border-color: var(--danger); border-top-color: var(--danger); }
+
+.count[data-invalid] {
+  border-color: var(--danger);
+  border-top-color: var(--danger);
+}
 
 .countLabel {
   display: flex;
@@ -157,6 +291,7 @@
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   border: 1px solid var(--rule-strong);
 }
+
 .stepBtn {
   display: grid;
   place-items: center;
@@ -167,10 +302,18 @@
   transition: background-color 0.15s;
   touch-action: manipulation;
 }
-.stepBtn:hover:not(:disabled, [data-disabled]) { background: var(--ink); color: var(--paper); }
+
+/* .stepBtn:hover:not(:disabled, [data-disabled]) { background: var(--ink); color: var(--paper); } */
 .stepBtn:disabled,
-.stepBtn[data-disabled] { opacity: 0.35; cursor: not-allowed; }
-.stepBtn svg { width: 16px; height: 16px; }
+.stepBtn[data-disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stepBtn svg {
+  width: 16px;
+  height: 16px;
+}
 
 .countInput {
   width: 100%;
@@ -184,12 +327,23 @@
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
 .countInput::-webkit-outer-spin-button,
-.countInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.countInput:focus { outline: none; background: var(--accent-soft); }
+.countInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.countInput:focus {
+  outline: none;
+  background: var(--accent-soft);
+}
 
 /* Rating range (Codeforces): same cards as the difficulty counts, in the accent colour. */
-.countRated { --diff-fg: var(--accent); }
+.countRated {
+  --diff-fg: var(--accent);
+}
+
 .ratingSelect {
   width: 100%;
   height: 50px;
@@ -201,19 +355,49 @@
   font-weight: 500;
   cursor: pointer;
 }
-.ratingSelect:focus,
-.ratingSelect[data-popup-open] { outline: none; border-color: var(--accent); background: var(--accent-soft); }
-.ratingPopup { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.ratingSelect[aria-invalid="true"] { border-color: var(--danger); }
-.presets :global(.btn[aria-pressed="true"]) { --btn-border: var(--accent); --btn-bg: var(--accent-soft); }
 
-.avail { min-height: 1.2em; }
-.availSkeleton { display: inline-block; width: 96px; height: 10px; vertical-align: middle; }
+.ratingSelect:focus,
+.ratingSelect[data-popup-open] {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ratingPopup {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ratingSelect[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.presets :global(.btn[aria-pressed="true"]) {
+  --btn-border: var(--accent);
+  --btn-bg: var(--accent-soft);
+}
+
+.avail {
+  min-height: 1.2em;
+}
+
+.availSkeleton {
+  display: inline-block;
+  width: 96px;
+  height: 10px;
+  vertical-align: middle;
+}
 
 /* Summary aside */
-.summary { min-width: 0; }
+.summary {
+  min-width: 0;
+}
+
 @media (min-width: 1024px) {
-  .summary { position: sticky; top: calc(var(--header-h) + 24px); }
+  .summary {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+  }
 }
 
 .summaryCard {
@@ -222,8 +406,11 @@
   padding: 20px;
   border: 1px solid var(--rule-strong);
   background: var(--surface);
-  box-shadow: 8px 8px 0 -1px var(--paper), 8px 8px 0 0 var(--accent-line);
+  box-shadow:
+    8px 8px 0 -1px var(--paper),
+    8px 8px 0 0 var(--accent-line);
 }
+
 .summaryHead {
   display: flex;
   justify-content: space-between;
@@ -231,7 +418,11 @@
   border-bottom: 1px solid var(--rule-strong);
 }
 
-.specList { display: grid; gap: 0; }
+.specList {
+  display: grid;
+  gap: 0;
+}
+
 .specList > div {
   display: grid;
   grid-template-columns: 72px 1fr;
@@ -240,15 +431,54 @@
   padding-block: 10px;
   border-bottom: 1px solid var(--rule);
 }
-.specList dd { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
-.specMix { align-items: center !important; }
-.specTotal { font-size: 1.5rem; }
-.placeholder { color: var(--ink-3); font-weight: 400; }
 
-.mix { display: grid; gap: 6px; }
-.mixBar { display: flex; height: 8px; gap: 2px; }
-.mixSeg { background: var(--diff-fg); min-width: 4px; }
-.mixLegend { display: flex; gap: 12px; font-size: 0.75rem; }
-.mixLegend > span { color: var(--diff-fg); }
+.specList dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
 
-.summaryNote { font-size: 0.8125rem; color: var(--ink-3); text-align: center; }
+.specMix {
+  align-items: center !important;
+}
+
+.specTotal {
+  font-size: 1.5rem;
+}
+
+.placeholder {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.mix {
+  display: grid;
+  gap: 6px;
+}
+
+.mixBar {
+  display: flex;
+  height: 8px;
+  gap: 2px;
+}
+
+.mixSeg {
+  background: var(--diff-fg);
+  min-width: 4px;
+}
+
+.mixLegend {
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+}
+
+.mixLegend > span {
+  color: var(--diff-fg);
+}
+
+.summaryNote {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  text-align: center;
+}

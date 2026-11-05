@@ -25,7 +25,10 @@ function encode(cached: Cached<CatalogProblem[]>): string {
 }
 
 /** Route-handler body shared by the live sources. */
-export async function serveCatalog(get: () => Promise<Cached<CatalogProblem[]>>, sourceName: string): Promise<Response> {
+export async function serveCatalog(
+  get: () => Promise<Cached<CatalogProblem[]>>,
+  sourceName: string,
+): Promise<Response> {
   let cached: Cached<CatalogProblem[]>;
   try {
     cached = await get();

@@ -51,7 +51,8 @@ export function validateCounts(counts: DifficultyCounts, available?: DifficultyC
     if (!Number.isInteger(n) || n < 0) errors[d] = "Enter a whole number, 0 or more.";
     else if (n > PER_DIFFICULTY_MAX) errors[d] = `At most ${PER_DIFFICULTY_MAX} per difficulty.`;
     else if (available && n > available[d]) {
-      errors[d] = `Only ${available[d]} ${DIFFICULTY_LABEL[d].toLowerCase()} problem${available[d] === 1 ? "" : "s"} available.`;
+      errors[d] =
+        `Only ${available[d]} ${DIFFICULTY_LABEL[d].toLowerCase()} problem${available[d] === 1 ? "" : "s"} available.`;
     }
   }
   const total = DIFFICULTIES.reduce((sum, d) => sum + (counts[d] || 0), 0);
@@ -98,7 +99,9 @@ export function inRatingRange(p: Pick<CatalogProblem, "rating">, min: number, ma
 
 export class NotEnoughRatedError extends Error {
   constructor(min: number, max: number, available: number) {
-    super(`Only ${available} problems rated ${ratingRange(min, max)} are available. Lower the count or widen the range.`);
+    super(
+      `Only ${available} problems rated ${ratingRange(min, max)} are available. Lower the count or widen the range.`,
+    );
     this.name = "NotEnoughRatedError";
   }
 }
@@ -169,7 +172,10 @@ function sample<T>(items: readonly T[], k: number, random: () => number): T[] {
 }
 
 /** Easy → Medium → Hard, then by position in the source sheet. */
-export function compareProblems(a: Pick<SetProblem, "difficulty" | "order">, b: Pick<SetProblem, "difficulty" | "order">): number {
+export function compareProblems(
+  a: Pick<SetProblem, "difficulty" | "order">,
+  b: Pick<SetProblem, "difficulty" | "order">,
+): number {
   return DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty] || a.order - b.order;
 }
 
@@ -200,7 +206,12 @@ export function pickProblems(
   return picked.sort(compareProblems);
 }
 
-const urlKey = (url: string) => url.trim().toLowerCase().replace(/[?#].*$/, "").replace(/\/+$/, "");
+const urlKey = (url: string) =>
+  url
+    .trim()
+    .toLowerCase()
+    .replace(/[?#].*$/, "")
+    .replace(/\/+$/, "");
 
 /**
  * Matcher for "skip problems already in my other sets". Problems match by id,

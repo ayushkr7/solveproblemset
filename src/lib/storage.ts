@@ -15,7 +15,10 @@ export const STORAGE_KEYS = {
 } as const;
 
 export class StorageWriteError extends Error {
-  constructor(public readonly reason: "quota" | "unavailable", cause?: unknown) {
+  constructor(
+    public readonly reason: "quota" | "unavailable",
+    cause?: unknown,
+  ) {
     super(
       reason === "quota"
         ? "Browser storage is full. Delete an old problem set and try again."
@@ -79,8 +82,7 @@ export function writeRaw(key: string, value: string): void {
     s.setItem(key, value);
   } catch (err) {
     const quota =
-      err instanceof DOMException &&
-      (err.name === "QuotaExceededError" || err.name === "NS_ERROR_DOM_QUOTA_REACHED");
+      err instanceof DOMException && (err.name === "QuotaExceededError" || err.name === "NS_ERROR_DOM_QUOTA_REACHED");
     throw new StorageWriteError(quota ? "quota" : "unavailable", err);
   }
 }

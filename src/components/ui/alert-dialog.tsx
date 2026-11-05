@@ -17,8 +17,10 @@ function AlertDialog(props: ComponentProps<typeof AlertDialogPrimitive.Root>) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
-interface AlertDialogContentProps
-  extends Omit<ComponentProps<typeof AlertDialogPrimitive.Popup>, "initialFocus" | "finalFocus" | "className"> {
+interface AlertDialogContentProps extends Omit<
+  ComponentProps<typeof AlertDialogPrimitive.Popup>,
+  "initialFocus" | "finalFocus" | "className"
+> {
   className?: string;
   /** Small mono label in the header bar, e.g. "Confirm restart". */
   eyebrow?: ReactNode;
@@ -78,8 +80,13 @@ function AlertDialogFooter({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="alert-dialog-footer" className={cn("dialog__foot", className)} {...props} />;
 }
 
-function AlertDialogTitle({ className, ...props }: ComponentProps<typeof AlertDialogPrimitive.Title> & { className?: string }) {
-  return <AlertDialogPrimitive.Title data-slot="alert-dialog-title" className={cn("dialog__title", className)} {...props} />;
+function AlertDialogTitle({
+  className,
+  ...props
+}: ComponentProps<typeof AlertDialogPrimitive.Title> & { className?: string }) {
+  return (
+    <AlertDialogPrimitive.Title data-slot="alert-dialog-title" className={cn("dialog__title", className)} {...props} />
+  );
 }
 
 /** Rendered as a <div> so it can hold paragraphs. */

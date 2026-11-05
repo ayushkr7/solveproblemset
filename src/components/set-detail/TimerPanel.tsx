@@ -23,7 +23,15 @@ const STATUS_LABEL: Record<TimerStatus, string> = {
   stopped: "Stopped",
 };
 
-function PrimaryControl({ status, actions, compact }: { status: TimerStatus; actions: TimerActions; compact?: boolean }) {
+function PrimaryControl({
+  status,
+  actions,
+  compact,
+}: {
+  status: TimerStatus;
+  actions: TimerActions;
+  compact?: boolean;
+}) {
   const size = compact ? "default" : "lg";
   if (status === "idle")
     return (
@@ -64,11 +72,17 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
 
       <div className={styles.readout}>
         <span className="label">Elapsed · active time</span>
-        <time className={`mono tabular ${styles.clock}`} dateTime={`PT${Math.floor(elapsed / 1000)}S`} aria-label={`Elapsed ${formatClock(elapsed)}`}>
+        <time
+          className={`mono tabular ${styles.clock}`}
+          dateTime={`PT${Math.floor(elapsed / 1000)}S`}
+          aria-label={`Elapsed ${formatClock(elapsed)}`}
+        >
           {formatClock(elapsed)}
         </time>
         <div className={styles.split}>
-          <span className="label">{allSolved ? "All problems solved" : stats.solved === 0 ? "First problem" : "Current problem"}</span>
+          <span className="label">
+            {allSolved ? "All problems solved" : stats.solved === 0 ? "First problem" : "Current problem"}
+          </span>
           <span className={`mono tabular ${styles.splitValue}`}>
             {status === "idle" || allSolved ? "—" : formatMinSec(split)}
           </span>
@@ -88,7 +102,9 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
       <dl className={styles.stats}>
         <div>
           <dt className="label">Solved</dt>
-          <dd className="mono tabular">{stats.solved}/{stats.total}</dd>
+          <dd className="mono tabular">
+            {stats.solved}/{stats.total}
+          </dd>
         </div>
         <div>
           <dt className="label">Avg / problem</dt>
@@ -100,7 +116,8 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
         <div>
           <dt className="label">Recorded</dt>
           <dd className="mono tabular">
-            {formatMinutes(stats.recordedMs)}<small> min</small>
+            {formatMinutes(stats.recordedMs)}
+            <small> min</small>
           </dd>
         </div>
       </dl>
@@ -118,17 +135,22 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
 }
 
 /** Compact, fixed-bottom controls for small screens while the main panel is scrolled away. */
-export function TimerDock({ set, now, actions, hidden }: { set: ProblemSet; now: number; actions: TimerActions; hidden: boolean }) {
+export function TimerDock({
+  set,
+  now,
+  actions,
+  hidden,
+}: {
+  set: ProblemSet;
+  now: number;
+  actions: TimerActions;
+  hidden: boolean;
+}) {
   const { status } = set.session;
   return (
     // Base UI's dialog scroll lock keeps the scrollbar gutter (scrollbar-gutter: stable),
     // so this fixed bar doesn't jump when a dialog opens.
-    <div
-      className={styles.dock}
-      data-status={status}
-      data-hidden={hidden || undefined}
-      inert={hidden}
-    >
+    <div className={styles.dock} data-status={status} data-hidden={hidden || undefined} inert={hidden}>
       <div className={styles.dockReadout}>
         <span className={styles.status}>
           <span className={styles.dot} aria-hidden="true" />

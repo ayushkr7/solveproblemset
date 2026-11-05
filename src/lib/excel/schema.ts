@@ -132,8 +132,24 @@ export const SETS_SHEET: SheetSpec<"setId" | "name" | "source" | "createdAt" | "
     },
   ],
   example: [
-    { setId: "S1", name: "Arrays warm-up", source: "Striver A2Z", createdAt: "2026-10-20T08:00:00Z", elapsed: "1830", state: "Paused", version: "2" },
-    { setId: "S2", name: "Graphs — week 1", source: "NeetCode Blind 75", createdAt: "2026-10-26T09:30:00Z", elapsed: "0", state: "NotStarted", version: "2" },
+    {
+      setId: "S1",
+      name: "Arrays warm-up",
+      source: "Striver A2Z",
+      createdAt: "2026-10-20T08:00:00Z",
+      elapsed: "1830",
+      state: "Paused",
+      version: "2",
+    },
+    {
+      setId: "S2",
+      name: "Graphs — week 1",
+      source: "NeetCode Blind 75",
+      createdAt: "2026-10-26T09:30:00Z",
+      elapsed: "0",
+      state: "NotStarted",
+      version: "2",
+    },
   ],
 };
 
@@ -144,12 +160,19 @@ export const PROBLEMS_SHEET: SheetSpec<
   description: "One row per problem. SetID says which set the problem belongs to.",
   columns: [
     { ...SET_ID_COLUMN, format: "Must match a SetID in the ProblemSets sheet." },
-    { key: "title", header: "ProblemName", required: true, format: `Text, up to ${PROBLEM_NAME_MAX} characters.`, width: 40 },
+    {
+      key: "title",
+      header: "ProblemName",
+      required: true,
+      format: `Text, up to ${PROBLEM_NAME_MAX} characters.`,
+      width: 40,
+    },
     {
       key: "url",
       header: "ProblemURL",
       required: true,
-      format: "The problem's page on its source (takeUforward, NeetCode, LeetCode, Codeforces). Full web address starting with https:// or http://.",
+      format:
+        "The problem's page on its source (takeUforward, NeetCode, LeetCode, Codeforces). Full web address starting with https:// or http://.",
       width: 54,
     },
     {
@@ -200,11 +223,66 @@ export const PROBLEMS_SHEET: SheetSpec<
     },
   ],
   example: [
-    { setId: "S1", title: "Two Sum", url: "https://takeuforward.org/practice/dsa/two-sum", leetCodeUrl: "https://leetcode.com/problems/two-sum/", difficulty: "Easy", status: "Solved", minutes: "12.5", order: "1", topic: "", rating: "" },
-    { setId: "S1", title: "3 Sum", url: "https://takeuforward.org/practice/dsa/3-sum", leetCodeUrl: "https://leetcode.com/problems/3sum/", difficulty: "Medium", status: "Unsolved", minutes: "0", order: "2", topic: "", rating: "" },
-    { setId: "S2", title: "Number of Islands", url: "https://neetcode.io/problems/count-number-of-islands/question?list=blind75", leetCodeUrl: "https://leetcode.com/problems/number-of-islands/", difficulty: "Medium", status: "Unsolved", minutes: "0", order: "1", topic: "", rating: "" },
-    { setId: "S1", title: "Trapping Rainwater", url: "https://takeuforward.org/practice/dsa/trapping-rainwater", leetCodeUrl: "https://leetcode.com/problems/trapping-rain-water/", difficulty: "Hard", status: "Solved", minutes: "41", order: "3", topic: "", rating: "" },
-    { setId: "S2", title: "Course Schedule", url: "https://neetcode.io/problems/course-schedule/question?list=blind75", leetCodeUrl: "https://leetcode.com/problems/course-schedule/", difficulty: "Medium", status: "Unsolved", minutes: "0", order: "2", topic: "", rating: "" },
+    {
+      setId: "S1",
+      title: "Two Sum",
+      url: "https://takeuforward.org/practice/dsa/two-sum",
+      leetCodeUrl: "https://leetcode.com/problems/two-sum/",
+      difficulty: "Easy",
+      status: "Solved",
+      minutes: "12.5",
+      order: "1",
+      topic: "",
+      rating: "",
+    },
+    {
+      setId: "S1",
+      title: "3 Sum",
+      url: "https://takeuforward.org/practice/dsa/3-sum",
+      leetCodeUrl: "https://leetcode.com/problems/3sum/",
+      difficulty: "Medium",
+      status: "Unsolved",
+      minutes: "0",
+      order: "2",
+      topic: "",
+      rating: "",
+    },
+    {
+      setId: "S2",
+      title: "Number of Islands",
+      url: "https://neetcode.io/problems/count-number-of-islands/question?list=blind75",
+      leetCodeUrl: "https://leetcode.com/problems/number-of-islands/",
+      difficulty: "Medium",
+      status: "Unsolved",
+      minutes: "0",
+      order: "1",
+      topic: "",
+      rating: "",
+    },
+    {
+      setId: "S1",
+      title: "Trapping Rainwater",
+      url: "https://takeuforward.org/practice/dsa/trapping-rainwater",
+      leetCodeUrl: "https://leetcode.com/problems/trapping-rain-water/",
+      difficulty: "Hard",
+      status: "Solved",
+      minutes: "41",
+      order: "3",
+      topic: "",
+      rating: "",
+    },
+    {
+      setId: "S2",
+      title: "Course Schedule",
+      url: "https://neetcode.io/problems/course-schedule/question?list=blind75",
+      leetCodeUrl: "https://leetcode.com/problems/course-schedule/",
+      difficulty: "Medium",
+      status: "Unsolved",
+      minutes: "0",
+      order: "2",
+      topic: "",
+      rating: "",
+    },
   ],
 };
 
@@ -217,7 +295,8 @@ export const V1_SET_SHEET: SheetSpec<"name" | "source" | "createdAt"> = {
   name: "ProblemSet",
   description: "",
   columns: SETS_SHEET.columns.filter(
-    (c): c is ColumnSpec<"name" | "source" | "createdAt"> => c.key === "name" || c.key === "source" || c.key === "createdAt",
+    (c): c is ColumnSpec<"name" | "source" | "createdAt"> =>
+      c.key === "name" || c.key === "source" || c.key === "createdAt",
   ),
 };
 

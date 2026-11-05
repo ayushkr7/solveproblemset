@@ -36,7 +36,11 @@ test("keys saved under the old app name move to the new prefix on first access",
   assert.equal(readRaw(STORAGE_KEYS.set("a")), '{"id":"a"}');
   assert.equal(readRaw(STORAGE_KEYS.set("b")), '{"id":"b","newer":true}', "an existing new key is never overwritten");
   assert.equal(readRaw(STORAGE_KEYS.theme), "dark");
-  assert.deepEqual([...ls.map.keys()].filter((k) => k.startsWith("blueprint-dsa:")), [], "old keys removed");
+  assert.deepEqual(
+    [...ls.map.keys()].filter((k) => k.startsWith("blueprint-dsa:")),
+    [],
+    "old keys removed",
+  );
   assert.equal(ls.getItem("unrelated"), "x");
 
   // Runs once per page load: keys written under the old prefix later are left alone.

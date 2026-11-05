@@ -26,9 +26,9 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         These Terms of Service (the “Terms”) govern your access to and use of {SITE.name} at{" "}
-        <a href={SITE.url}>{domain}</a> (the “Service”), operated by {SITE.operator} (“we”, “us” or “our”). By accessing or using
-        the Service, you agree to be bound by these Terms and acknowledge our {privacy}. If you do not agree to these Terms, you
-        must not use the Service.
+        <a href={SITE.url}>{domain}</a> (the “Service”), operated by {SITE.operator} (“we”, “us” or “our”). By accessing
+        or using the Service, you agree to be bound by these Terms and acknowledge our {privacy}. If you do not agree to
+        these Terms, you must not use the Service.
       </p>
     ),
   },
@@ -37,10 +37,10 @@ const SECTIONS: LegalSection[] = [
     title: "Description of the Service",
     body: (
       <p>
-        The Service allows you to create practice sets from curated problem sheets and from LeetCode and Codeforces, to time your
-        practice, and to import and export sets as Excel workbooks, either on your device or in your Google Drive. The Service is
-        provided free of charge and does not require an account. We may add, modify or remove features, or suspend or discontinue
-        the Service, at any time and without notice.
+        The Service allows you to create practice sets from curated problem sheets and from LeetCode and Codeforces, to
+        time your practice, and to import and export sets as Excel workbooks, either on your device or in your Google
+        Drive. The Service is provided free of charge and does not require an account. We may add, modify or remove
+        features, or suspend or discontinue the Service, at any time and without notice.
       </p>
     ),
   },
@@ -49,9 +49,9 @@ const SECTIONS: LegalSection[] = [
     title: "Eligibility",
     body: (
       <p>
-        You must be at least 13 years of age, or the minimum age of digital consent in your country of residence, to use the
-        Service. If you use the Service on behalf of an organisation, you represent that you are authorised to accept these Terms
-        on its behalf.
+        You must be at least 13 years of age, or the minimum age of digital consent in your country of residence, to use
+        the Service. If you use the Service on behalf of an organisation, you represent that you are authorised to
+        accept these Terms on its behalf.
       </p>
     ),
   },
@@ -60,10 +60,10 @@ const SECTIONS: LegalSection[] = [
     title: "Your data and backups",
     body: (
       <p>
-        Your problem sets and timings are stored solely in your browser, and you retain all rights to them. Because this data is
-        never transmitted to us, we are unable to restore it if it is lost, for example when browser data is cleared, when you
-        change browser or device, or when you use private browsing. You are responsible for maintaining your own backups, which
-        you can create by exporting a workbook.
+        Your problem sets and timings are stored solely in your browser, and you retain all rights to them. Because this
+        data is never transmitted to us, we are unable to restore it if it is lost, for example when browser data is
+        cleared, when you change browser or device, or when you use private browsing. You are responsible for
+        maintaining your own backups, which you can create by exporting a workbook.
       </p>
     ),
   },
@@ -72,11 +72,12 @@ const SECTIONS: LegalSection[] = [
     title: "Google Drive integration",
     body: (
       <p>
-        The Google Drive features are optional. By using them, you authorise the Service to create, read and update only the
-        Google Drive files that it saves and the files that you select, as described in the {privacy}. Your use of Google&rsquo;s
-        services is also subject to the {ext("https://policies.google.com/terms", "Google Terms of Service")}. You may revoke this
-        authorisation at any time from {ext("https://myaccount.google.com/connections", "your Google Account")}. You are
-        responsible for the files you choose to import and for retaining copies of any files that are important to you.
+        The Google Drive features are optional. By using them, you authorise the Service to create, read and update only
+        the Google Drive files that it saves and the files that you select, as described in the {privacy}. Your use of
+        Google&rsquo;s services is also subject to the{" "}
+        {ext("https://policies.google.com/terms", "Google Terms of Service")}. You may revoke this authorisation at any
+        time from {ext("https://myaccount.google.com/connections", "your Google Account")}. You are responsible for the
+        files you choose to import and for retaining copies of any files that are important to you.
       </p>
     ),
   },
@@ -86,15 +87,15 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          Problem titles, difficulty labels and links are sourced from takeUforward (Striver&rsquo;s sheets), NeetCode, LeetCode
-          and Codeforces, and remain the property of their respective owners. Their names and trademarks are used solely to
-          identify the problems concerned.{" "}
+          Problem titles, difficulty labels and links are sourced from takeUforward (Striver&rsquo;s sheets), NeetCode,
+          LeetCode and Codeforces, and remain the property of their respective owners. Their names and trademarks are
+          used solely to identify the problems concerned.{" "}
           <strong>{SITE.name} is not affiliated with, endorsed by or sponsored by any of them.</strong>
         </p>
         <p>
-          Problems open on those websites and are subject to their respective terms. We do not control these websites and are not
-          responsible for their content or availability, or for the accuracy of problem details, ratings and lists, which may
-          change at their source.
+          Problems open on those websites and are subject to their respective terms. We do not control these websites
+          and are not responsible for their content or availability, or for the accuracy of problem details, ratings and
+          lists, which may change at their source.
         </p>
       </>
     ),
@@ -106,14 +107,16 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>You agree that you will not:</p>
         <ul>
-          <li>use the Service in violation of any applicable law or in a manner that infringes the rights of others;</li>
           <li>
-            interfere with or disrupt the Service, including by sending automated or bulk requests to it, or by attempting to
-            circumvent its limits or security measures;
+            use the Service in violation of any applicable law or in a manner that infringes the rights of others;
           </li>
           <li>
-            attempt to gain unauthorised access to the Service, its hosting infrastructure, or any other person&rsquo;s data or
-            Google account;
+            interfere with or disrupt the Service, including by sending automated or bulk requests to it, or by
+            attempting to circumvent its limits or security measures;
+          </li>
+          <li>
+            attempt to gain unauthorised access to the Service, its hosting infrastructure, or any other person&rsquo;s
+            data or Google account;
           </li>
           <li>use the Service to distribute malware or files intended to harm other users&rsquo; devices; or</li>
           <li>resell the Service, or represent it as your own or as endorsed by us.</li>
@@ -126,10 +129,10 @@ const SECTIONS: LegalSection[] = [
     title: "Intellectual property",
     body: (
       <p>
-        The {SITE.name} name, logo and site design are owned by us. Except for the limited right to use the Service in accordance
-        with these Terms, nothing in these Terms grants you any rights in them. Where the source code of the Service is published
-        under an open-source licence, that licence governs your use of the code. Third-party content is addressed under{" "}
-        <a href="#third-party">Third-party content and links</a>.
+        The {SITE.name} name, logo and site design are owned by us. Except for the limited right to use the Service in
+        accordance with these Terms, nothing in these Terms grants you any rights in them. Where the source code of the
+        Service is published under an open-source licence, that licence governs your use of the code. Third-party
+        content is addressed under <a href="#third-party">Third-party content and links</a>.
       </p>
     ),
   },
@@ -138,7 +141,8 @@ const SECTIONS: LegalSection[] = [
     title: "Feedback",
     body: (
       <p>
-        If you provide suggestions or other feedback about the Service, we may use it without restriction or obligation to you.
+        If you provide suggestions or other feedback about the Service, we may use it without restriction or obligation
+        to you.
       </p>
     ),
   },
@@ -147,11 +151,12 @@ const SECTIONS: LegalSection[] = [
     title: "Disclaimer of warranties",
     body: (
       <p>
-        The Service is provided free of charge on an “as is” and “as available” basis. To the fullest extent permitted by law, we
-        disclaim all warranties, whether express or implied, including any implied warranties of merchantability, fitness for a
-        particular purpose and non-infringement. We do not warrant that the Service will be uninterrupted, error-free or secure,
-        that problem data or recorded timings will be accurate, or that the Service will meet your requirements. Nothing in the
-        Service constitutes professional, career or educational advice.
+        The Service is provided free of charge on an “as is” and “as available” basis. To the fullest extent permitted
+        by law, we disclaim all warranties, whether express or implied, including any implied warranties of
+        merchantability, fitness for a particular purpose and non-infringement. We do not warrant that the Service will
+        be uninterrupted, error-free or secure, that problem data or recorded timings will be accurate, or that the
+        Service will meet your requirements. Nothing in the Service constitutes professional, career or educational
+        advice.
       </p>
     ),
   },
@@ -161,16 +166,16 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          To the fullest extent permitted by law, we shall not be liable for any indirect, incidental, special, consequential or
-          punitive damages, or for any loss of data, profits or opportunities, arising out of or relating to your use of, or
-          inability to use, the Service, even if we have been advised of the possibility of such damages. Because the Service is
-          provided free of charge, our total liability for any claim arising out of or relating to the Service shall not exceed
-          US$50.
+          To the fullest extent permitted by law, we shall not be liable for any indirect, incidental, special,
+          consequential or punitive damages, or for any loss of data, profits or opportunities, arising out of or
+          relating to your use of, or inability to use, the Service, even if we have been advised of the possibility of
+          such damages. Because the Service is provided free of charge, our total liability for any claim arising out of
+          or relating to the Service shall not exceed US$50.
         </p>
         <p>
-          Some jurisdictions do not permit the exclusion or limitation of certain damages, so some of the above limitations may not
-          apply to you. Nothing in these Terms excludes or limits any liability that cannot be excluded or limited by law, or any
-          consumer rights that cannot be waived.
+          Some jurisdictions do not permit the exclusion or limitation of certain damages, so some of the above
+          limitations may not apply to you. Nothing in these Terms excludes or limits any liability that cannot be
+          excluded or limited by law, or any consumer rights that cannot be waived.
         </p>
       </>
     ),
@@ -180,8 +185,8 @@ const SECTIONS: LegalSection[] = [
     title: "Indemnification",
     body: (
       <p>
-        To the extent permitted by law, you agree to indemnify us against any claims, losses, liabilities and reasonable expenses
-        arising from your breach of these Terms or your misuse of the Service.
+        To the extent permitted by law, you agree to indemnify us against any claims, losses, liabilities and reasonable
+        expenses arising from your breach of these Terms or your misuse of the Service.
       </p>
     ),
   },
@@ -190,10 +195,11 @@ const SECTIONS: LegalSection[] = [
     title: "Suspension and termination",
     body: (
       <p>
-        You may stop using the Service at any time; clearing this site&rsquo;s data in your browser removes all information the
-        Service has stored. We may suspend or restrict access to the Service for anyone who breaches these Terms or whose use
-        presents a risk to the Service or its users. The provisions on intellectual property, feedback, disclaimer of warranties,
-        limitation of liability, indemnification and general terms survive the end of your use of the Service.
+        You may stop using the Service at any time; clearing this site&rsquo;s data in your browser removes all
+        information the Service has stored. We may suspend or restrict access to the Service for anyone who breaches
+        these Terms or whose use presents a risk to the Service or its users. The provisions on intellectual property,
+        feedback, disclaimer of warranties, limitation of liability, indemnification and general terms survive the end
+        of your use of the Service.
       </p>
     ),
   },
@@ -202,10 +208,10 @@ const SECTIONS: LegalSection[] = [
     title: "Changes to these terms",
     body: (
       <p>
-        We may revise these Terms from time to time. When we do, we will update the “Last updated” date above and, for material
-        changes, provide notice on the Service before the changes take effect. Your continued use of the Service after the
-        revised Terms take effect constitutes your acceptance of them. The current version is always available at{" "}
-        <Link href={LEGAL_LINKS.terms}>{domain}/terms</Link>.
+        We may revise these Terms from time to time. When we do, we will update the “Last updated” date above and, for
+        material changes, provide notice on the Service before the changes take effect. Your continued use of the
+        Service after the revised Terms take effect constitutes your acceptance of them. The current version is always
+        available at <Link href={LEGAL_LINKS.terms}>{domain}/terms</Link>.
       </p>
     ),
   },
@@ -214,10 +220,10 @@ const SECTIONS: LegalSection[] = [
     title: "General",
     body: (
       <p>
-        These Terms, together with the {privacy}, constitute the entire agreement between you and us regarding the Service. If any
-        provision of these Terms is held to be unenforceable, the remaining provisions will remain in full force and effect. Our
-        failure to enforce any provision does not constitute a waiver of that provision. You may not assign or transfer your
-        rights under these Terms; we may assign ours to any successor to the Service.
+        These Terms, together with the {privacy}, constitute the entire agreement between you and us regarding the
+        Service. If any provision of these Terms is held to be unenforceable, the remaining provisions will remain in
+        full force and effect. Our failure to enforce any provision does not constitute a waiver of that provision. You
+        may not assign or transfer your rights under these Terms; we may assign ours to any successor to the Service.
       </p>
     ),
   },

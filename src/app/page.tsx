@@ -95,18 +95,16 @@ export default async function LandingPage() {
           <div className={styles.heroCopy}>
             <p className={`label ${styles.kicker}`}>
               <span className={styles.kickerDot} aria-hidden="true" />
-              Sheet 01 — A practice system for DSA &amp; CP
+              For coding interviews &amp; contests
             </p>
             <h1 id="hero-title" className={styles.heroTitle}>
-              Practice,
+              Solve on
               <br />
-              <span className="serif-accent">measured.</span>
+              <span className="serif-accent">the clock.</span>
             </h1>
             <p className={styles.heroLede}>
-              Turn Striver&rsquo;s sheets, NeetCode&rsquo;s Blind 75, LeetCode
-              and Codeforces into focused, personalised problem sets. Time every
-              solve, pause without penalty, and pick up exactly where you left
-              off.
+              Generate practice sets from curated DSA sheets, LeetCode or Codeforces by difficulty or rating, and track
+              the time spent on each problem.
             </p>
             <div className={styles.ctaRow}>
               <Link href="/create" className="btn btn--primary btn--lg">
@@ -120,41 +118,28 @@ export default async function LandingPage() {
               <div>
                 <dt className="label">Sources</dt>
                 <dd className="mono">
-                  {sheets.length} sheets · {live.length} live
+                  <span>{sheets.length} sheets,</span> <span>{live.map((s) => s.shortName).join(", ")}</span>
                 </dd>
               </div>
               <div>
-                <dt className="label">Tiers</dt>
-                <dd className="mono">E · M · H</dd>
+                <dt className="label">Timing</dt>
+                <dd className="mono">
+                  <span>Per problem</span>
+                </dd>
               </div>
               <div>
-                <dt className="label">Accounts</dt>
+                <dt className="label">Sign-up</dt>
                 <dd className="mono">None</dd>
               </div>
             </dl>
           </div>
 
-          <figure
-            className={styles.figure}
-            aria-label="Illustration of a problem set in progress"
-          >
+          <figure className={styles.figure} aria-label="Illustration of a problem set in progress">
             <div className={styles.figFrame}>
-              <span
-                className={`${styles.corner} ${styles.cTL}`}
-                aria-hidden="true"
-              />
-              <span
-                className={`${styles.corner} ${styles.cTR}`}
-                aria-hidden="true"
-              />
-              <span
-                className={`${styles.corner} ${styles.cBL}`}
-                aria-hidden="true"
-              />
-              <span
-                className={`${styles.corner} ${styles.cBR}`}
-                aria-hidden="true"
-              />
+              <span className={`${styles.corner} ${styles.cTL}`} aria-hidden="true" />
+              <span className={`${styles.corner} ${styles.cTR}`} aria-hidden="true" />
+              <span className={`${styles.corner} ${styles.cBL}`} aria-hidden="true" />
+              <span className={`${styles.corner} ${styles.cBR}`} aria-hidden="true" />
 
               <div className={styles.figHead}>
                 <div>
@@ -169,14 +154,8 @@ export default async function LandingPage() {
 
               <ol className={styles.figRows}>
                 {FIGURE_ROWS.map((r, i) => (
-                  <li
-                    key={r.title}
-                    className={styles.figRow}
-                    data-done={r.done || undefined}
-                  >
-                    <span className={`mono ${styles.figNo}`}>
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
+                  <li key={r.title} className={styles.figRow} data-done={r.done || undefined}>
+                    <span className={`mono ${styles.figNo}`}>{String(i + 1).padStart(2, "0")}</span>
                     <span className={styles.figBox} aria-hidden="true">
                       {r.done ? "✓" : ""}
                     </span>
@@ -185,11 +164,7 @@ export default async function LandingPage() {
                       <DifficultyBadge difficulty={r.d} />
                     </span>
                     <span className={`mono tabular ${styles.figTime}`}>
-                      {r.time ? (
-                        `${r.time} min`
-                      ) : (
-                        <span className={styles.figLive}>live</span>
-                      )}
+                      {r.time ? `${r.time} min` : <span className={styles.figLive}>live</span>}
                     </span>
                   </li>
                 ))}
@@ -248,23 +223,16 @@ export default async function LandingPage() {
       {/* ---------------- Timing model ---------------- */}
       <section className={styles.section} aria-labelledby="timing-title">
         <div className="container">
-          <SectionHead
-            index="§ 03"
-            title="How time is measured"
-            id="timing-title"
-          />
+          <SectionHead index="§ 03" title="How time is measured" id="timing-title" />
           <div className={styles.timingGrid}>
             <div className={styles.timingCopy}>
               <p>
-                The session clock only advances while it&rsquo;s running. When
-                you mark a problem solved, its time is the active time since
-                your previous solve — or since you pressed Start, for the first
-                one.
+                The session clock only advances while it&rsquo;s running. When you mark a problem solved, its time is
+                the active time since your previous solve — or since you pressed Start, for the first one.
               </p>
               <p className="muted">
-                Breaks are free: pause for coffee and the gap is simply not
-                counted. Unticking your latest solve hands its time back to the
-                problem you&rsquo;re on, so nothing is lost or counted twice.
+                Breaks are free: pause for coffee and the gap is simply not counted. Unticking your latest solve hands
+                its time back to the problem you&rsquo;re on, so nothing is lost or counted twice.
               </p>
             </div>
             <figure
@@ -278,10 +246,7 @@ export default async function LandingPage() {
                 <span className={styles.seg} style={{ gridColumn: 2 }}>
                   run
                 </span>
-                <span
-                  className={`${styles.seg} ${styles.segPause}`}
-                  style={{ gridColumn: 3 }}
-                >
+                <span className={`${styles.seg} ${styles.segPause}`} style={{ gridColumn: 3 }}>
                   pause
                 </span>
                 <span className={styles.seg} style={{ gridColumn: 4 }}>
@@ -313,35 +278,25 @@ export default async function LandingPage() {
       {/* ---------------- Sources ---------------- */}
       <section className={styles.section} aria-labelledby="sources-title">
         <div className="container">
-          <SectionHead
-            index="§ 04"
-            title="Problem sources"
-            id="sources-title"
-          />
+          <SectionHead index="§ 04" title="Problem sources" id="sources-title" />
           <ul className={styles.sources}>
             {live.map((s) => (
               <li key={s.id} className={styles.source}>
                 <div className={styles.sourceHead}>
-                  <span className={`mono ${styles.sourceCode}`}>
-                    {s.shortName}
-                  </span>
+                  <span className={`mono ${styles.sourceCode}`}>{s.shortName}</span>
                   <span className="label">Live · {s.author}</span>
                 </div>
                 <h3 className={styles.sourceTitle}>{s.name}</h3>
                 <p className="muted">{s.description}</p>
                 <p className={`label ${styles.sourceLive}`}>
-                  {s.selectBy === "rating"
-                    ? "Pick by rating · 800–3500"
-                    : "Pick by difficulty · E / M / H"}
+                  {s.selectBy === "rating" ? "Pick by rating · 800–3500" : "Pick by difficulty · E / M / H"}
                 </p>
               </li>
             ))}
             {sheetStats.map((s) => (
               <li key={s.id} className={styles.source}>
                 <div className={styles.sourceHead}>
-                  <span className={`mono ${styles.sourceCode}`}>
-                    {s.shortName}
-                  </span>
+                  <span className={`mono ${styles.sourceCode}`}>{s.shortName}</span>
                   <span className="label">{s.author}</span>
                 </div>
                 <h3 className={styles.sourceTitle}>{s.name}</h3>
@@ -373,8 +328,7 @@ export default async function LandingPage() {
       <section className={styles.cta} aria-labelledby="cta-title">
         <div className={`container ${styles.ctaInner}`}>
           <h2 id="cta-title" className={styles.ctaTitle}>
-            Draft your first set.{" "}
-            <span className="serif-accent">Ship the solves.</span>
+            Draft your first set. <span className="serif-accent">Ship the solves.</span>
           </h2>
           <div className={styles.ctaRow}>
             <Link href="/create" className="btn btn--primary btn--lg">
@@ -390,15 +344,7 @@ export default async function LandingPage() {
   );
 }
 
-function SectionHead({
-  index,
-  title,
-  id,
-}: {
-  index: string;
-  title: string;
-  id: string;
-}) {
+function SectionHead({ index, title, id }: { index: string; title: string; id: string }) {
   return (
     <header className={styles.sectionHead}>
       <span className={`mono ${styles.sectionIndex}`}>{index}</span>
