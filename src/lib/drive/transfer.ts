@@ -2,7 +2,14 @@
  * Google Drive import/export, built on the same workbook format and validation
  * as local files. Every failure is a DriveError with a user-readable message.
  */
-import { buildProblemSetsFile, readWorkbookData, workbookSizeError, type ImportResult } from "../excel/transfer";
+import {
+  buildProblemSetsFile,
+  readCustomSheetData,
+  readWorkbookData,
+  workbookSizeError,
+  type CustomSheetResult,
+  type ImportResult,
+} from "../excel/transfer";
 import type { ProblemSet } from "../types";
 import { DriveError, downloadWorkbook, uploadWorkbook, type DriveFile } from "./files";
 import { forgetAccessToken, getAccessToken, pickWorkbook, type PickedFile } from "./google";
@@ -42,10 +49,22 @@ export async function pickDriveWorkbook(): Promise<PickedFile | null> {
   return withToken(pickWorkbook);
 }
 
-/** Download, parse and validate a picked workbook. Nothing is saved. Rejects only for Drive failures. */
-export async function readDriveWorkbook(file: PickedFile, now: number = Date.now()): Promise<ImportResult> {
+/** Download a picked workbook and hand it to `read`, skipping files that would be rejected anyway. */
+async function readPicked<R>(
+  file: PickedFile,
+  read: (data: ArrayBuffer) => Promise<R>,
+): Promise<R | NonNullable<ReturnType<typeof workbookSizeError>>> {
   const sizeError = file.sizeBytes === null ? null : workbookSizeError(file.sizeBytes);
-  if (sizeError) return sizeError; // don't download what would be rejected anyway
-  const data = await withToken((token) => downloadWorkbook(token, file));
-  return readWorkbookData(data, now);
+  if (sizeError) return sizeError;
+  return read(await withToken((token) => downloadWorkbook(token, file)));
+}
+
+/** Download, parse and validate a picked workbook of problem sets. Nothing is saved. Rejects only for Drive failures. */
+export function readDriveWorkbook(file: PickedFile, now: number = Date.now()): Promise<ImportResult> {
+  return readPicked(file, (data) => readWorkbookData(data, now));
+}
+
+/** Download, parse and validate a picked custom problem sheet. Nothing is saved. Rejects only for Drive failures. */
+export function readDriveCustomSheet(file: PickedFile): Promise<CustomSheetResult> {
+  return readPicked(file, readCustomSheetData);
 }

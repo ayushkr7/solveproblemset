@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AlertIcon, ArrowLeftIcon, InfoIcon, TrashIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
-import { getSheet } from "@/data/sheets";
+import { setSource } from "@/data/sheets";
 import { useNow } from "@/hooks/useNow";
 import { useProblemSet } from "@/hooks/useProblemSets";
 import { formatDateTime, plural } from "@/lib/format";
@@ -70,7 +70,7 @@ function Workspace({ set }: { set: ProblemSet }) {
     restart: () => setConfirmRestart(true),
   };
 
-  const sheet = getSheet(set.sheetId);
+  const sheet = setSource(set);
   const stats = timer.getStats(set);
   const counts = DIFFICULTIES.map((d) => ({ d, n: set.problems.filter((p) => p.difficulty === d).length }));
 

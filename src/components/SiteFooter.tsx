@@ -31,8 +31,9 @@ export function SiteFooter() {
         </nav>
         <div className={styles.meta}>
           <p className="label">
-            Problems sourced from Striver&rsquo;s sheets (takeUforward), NeetCode&rsquo;s Blind 75, LeetCode and
-            Codeforces · Not affiliated
+            This is an open-source community tool built for educational purposes. The curriculum design, structuring,
+            and branding for Striver's and Neetcode's sheet belong entirely to them. We are not affiliated with or
+            endorsed by them.
           </p>
           <nav aria-label="Legal" className={styles.legal}>
             <span className="label">

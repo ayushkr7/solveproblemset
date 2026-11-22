@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DifficultyTicks } from "@/components/DifficultyBadge";
-import { AlertIcon, ArrowRightIcon, MinusIcon, PlusIcon } from "@/components/Icons";
+import { AlertIcon, ArrowRightIcon, InfoIcon, MinusIcon, PlusIcon, TrashIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel, Fieldset, FieldsetLegend } from "@/components/ui/field";
@@ -18,8 +19,11 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
-import { SHEETS, fetchSheetProblems } from "@/data/sheets";
+import { CUSTOM_SHORT_NAME, SHEETS, fetchSheetProblems } from "@/data/sheets";
+import { useCustomSheets } from "@/hooks/useCustomSheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
+import { deleteCustomSheet } from "@/lib/custom-sheets";
+import { plural } from "@/lib/format";
 import {
   NAME_MAX,
   PER_DIFFICULTY_MAX,
@@ -28,32 +32,89 @@ import {
   countByDifficulty,
   inRatingRange,
   pickByRating,
+  pickMix,
   pickProblems,
   ratingRange,
   usedProblemMatcher,
   validateCounts,
   validateInput,
+  validateMix,
+  validateMixInput,
   validateRatedInput,
   validateRating,
   type FieldErrors,
 } from "@/lib/generate";
+import { isCodeforcesRow } from "@/lib/excel/custom-sheet";
 import { saveSet } from "@/lib/problem-sets";
-import { CF_RATINGS } from "@/lib/sources/codeforces";
+import { CF_RATINGS, CF_RATING_STEP } from "@/lib/sources/codeforces";
 import {
   DIFFICULTIES,
   DIFFICULTY_LABEL,
   type CatalogProblem,
+  type CustomSheet,
   type Difficulty,
   type DifficultyCounts,
   type SheetId,
 } from "@/lib/types";
+import { AddCustomSheet, CustomSheetFormatDialog } from "./CustomSheetSource";
 import styles from "./CreateSetForm.module.css";
 
 type Catalog =
   | { status: "idle" }
-  | { status: "loading"; sheetId: SheetId }
-  | { status: "ready"; sheetId: SheetId; problems: CatalogProblem[] }
-  | { status: "error"; sheetId: SheetId; message: string };
+  | { status: "loading" }
+  | { status: "ready"; problems: CatalogProblem[] }
+  | { status: "error"; message: string };
+
+/** One card in "Choose a source": a built-in source, or one of the person's custom sheets. */
+interface SourceOption {
+  key: string;
+  sheetId: SheetId;
+  name: string;
+  shortName: string;
+  description: string;
+  live: boolean;
+  selectBy: "difficulty" | "rating";
+  load: () => Promise<CatalogProblem[]>;
+  custom: CustomSheet | null;
+  /**
+   * A custom sheet's two kinds of problem: LeetCode ones, picked by difficulty,
+   * and Codeforces ones (with their lowest and highest rating), picked by rating.
+   */
+  split: { leetcode: number; codeforces: { count: number; min: number; max: number } | null } | null;
+}
+
+const BUILT_IN_SOURCES: readonly SourceOption[] = SHEETS.map((s) => ({
+  key: s.id,
+  sheetId: s.id,
+  name: s.name,
+  shortName: s.shortName,
+  description: s.description,
+  live: s.kind === "live",
+  selectBy: s.selectBy,
+  load: () => fetchSheetProblems(s.id),
+  custom: null,
+  split: null,
+}));
+
+function customSource(sheet: CustomSheet): SourceOption {
+  const ratings = sheet.problems.flatMap((p) => (isCodeforcesRow(p) && p.rating !== undefined ? [p.rating] : []));
+  return {
+    key: `custom:${sheet.id}`,
+    sheetId: "custom",
+    name: sheet.name,
+    shortName: CUSTOM_SHORT_NAME,
+    description: `${plural(sheet.problems.length, "problem")} from ${sheet.fileName}`,
+    live: false,
+    selectBy: "difficulty",
+    load: () => Promise.resolve(sheet.problems),
+    custom: sheet,
+    split: {
+      leetcode: sheet.problems.filter((p) => !isCodeforcesRow(p)).length,
+      codeforces:
+        ratings.length > 0 ? { count: ratings.length, min: Math.min(...ratings), max: Math.max(...ratings) } : null,
+    },
+  };
+}
 
 const PRESETS: { label: string; counts: DifficultyCounts }[] = [
   { label: "Warm-up", counts: { easy: 3, medium: 2, hard: 0 } },
@@ -79,9 +140,10 @@ function toCount(raw: string): number {
 export function CreateSetForm() {
   const router = useRouter();
   const existingSets = useProblemSets();
+  const customSheets = useCustomSheets();
 
   const [name, setName] = useState("");
-  const [sheetId, setSheetId] = useState<SheetId | null>(null);
+  const [sourceKey, setSourceKey] = useState<string | null>(null);
   const [rawCounts, setRawCounts] = useState<Record<Difficulty, string>>({ easy: "2", medium: "3", hard: "1" });
   const [ratingMin, setRatingMin] = useState(800);
   const [ratingMax, setRatingMax] = useState(1200);
@@ -92,10 +154,20 @@ export function CreateSetForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [formatOpen, setFormatOpen] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<CustomSheet | null>(null);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const countsRef = useRef<HTMLFieldSetElement>(null);
+  const ratingRef = useRef<HTMLFieldSetElement>(null);
+  const mixRef = useRef<HTMLElement>(null);
+  const addSheetRef = useRef<HTMLButtonElement>(null);
+  const addedFocusRef = useRef<HTMLElement | null>(null);
+  const formatFocusRef = useRef<HTMLElement | null>(null);
+  const removedFocusRef = useRef<HTMLElement | null>(null);
 
   const counts: DifficultyCounts = {
     easy: toCount(rawCounts.easy),
@@ -104,37 +176,51 @@ export function CreateSetForm() {
   };
   const ratedCount = toCount(rawRatedCount);
   const rated = { min: ratingMin, max: ratingMax, count: ratedCount };
-  const sheet = SHEETS.find((s) => s.id === sheetId);
-  const byRating = sheet?.selectBy === "rating";
-  const total = byRating
-    ? Number.isFinite(ratedCount)
-      ? ratedCount
-      : 0
-    : DIFFICULTIES.reduce((s, d) => s + (Number.isFinite(counts[d]) ? counts[d] : 0), 0);
+  const sources = useMemo(() => [...BUILT_IN_SOURCES, ...customSheets.map(customSource)], [customSheets]);
+  // Undefined when nothing is selected, or the selected sheet was removed in another tab.
+  const source = sources.find((s) => s.key === sourceKey);
+  const sheetId = source?.sheetId ?? null;
+  // A custom sheet shows a picker per platform it has: by difficulty for LeetCode,
+  // by rating for Codeforces, or both, in which case one set mixes them.
+  const split = source?.split ?? null;
+  const showRating = split ? split.codeforces !== null : source?.selectBy === "rating";
+  const showDifficulty = split ? split.leetcode > 0 : !showRating;
+  const mixed = showDifficulty && showRating;
+  const byRating = showRating && !mixed;
+  const difficultyTotal = DIFFICULTIES.reduce((s, d) => s + (Number.isFinite(counts[d]) ? counts[d] : 0), 0);
+  const ratedTotal = Number.isFinite(ratedCount) ? ratedCount : 0;
+  const total = (showDifficulty ? difficultyTotal : 0) + (showRating ? ratedTotal : 0);
 
-  // Load the selected sheet so availability can be shown and validated up front.
+  // Load the selected source so availability can be shown and validated up front.
   useEffect(() => {
-    if (!sheetId) return;
+    if (!source) {
+      setCatalog({ status: "idle" });
+      return;
+    }
     let cancelled = false;
-    setCatalog({ status: "loading", sheetId });
-    fetchSheetProblems(sheetId).then(
-      (problems) => !cancelled && setCatalog({ status: "ready", sheetId, problems }),
+    setCatalog({ status: "loading" });
+    source.load().then(
+      (problems) => !cancelled && setCatalog({ status: "ready", problems }),
       (err: unknown) =>
         !cancelled &&
         setCatalog({
           status: "error",
-          sheetId,
           message: err instanceof Error ? err.message : "Couldn't load problems.",
         }),
     );
     return () => {
       cancelled = true;
     };
-  }, [sheetId, reloadKey]);
+  }, [source, reloadKey]);
 
   const otherSets = useMemo(
-    () => (sheetId && existingSets ? existingSets.filter((s) => s.sheetId === sheetId) : []),
-    [existingSets, sheetId],
+    () =>
+      source && existingSets
+        ? existingSets.filter(
+            (s) => s.sheetId === source.sheetId && (!source.custom || s.customSheetName === source.custom.name),
+          )
+        : [],
+    [existingSets, source],
   );
   const isUsed = useMemo(() => usedProblemMatcher(otherSets.flatMap((s) => s.problems)), [otherSets]);
   const usedCount = catalog.status === "ready" ? catalog.problems.filter(isUsed).length : null;
@@ -144,19 +230,39 @@ export function CreateSetForm() {
     return avoidUsed ? catalog.problems.filter((p) => !isUsed(p)) : catalog.problems;
   }, [catalog, avoidUsed, isUsed]);
 
-  const available = pool ? countByDifficulty(pool) : undefined;
-  const ratedAvailable = pool ? pool.filter((p) => inRatingRange(p, ratingMin, ratingMax)).length : undefined;
+  // Each picker only sees its own platform's problems.
+  const byDifficultyPool = pool && split ? pool.filter((p) => !isCodeforcesRow(p)) : pool;
+  const byRatingPool = pool && split ? pool.filter(isCodeforcesRow) : pool;
+  const available = byDifficultyPool ? countByDifficulty(byDifficultyPool) : undefined;
+  const ratedAvailable = byRatingPool
+    ? byRatingPool.filter((p) => inRatingRange(p, ratingMin, ratingMax)).length
+    : undefined;
   const validate = (): FieldErrors =>
-    byRating
-      ? validateRatedInput({ name, sheetId, ...rated }, ratedAvailable)
-      : validateInput({ name, sheetId, counts }, available);
+    mixed
+      ? validateMixInput({ name, sheetId, counts, rating: rated }, available, ratedAvailable)
+      : byRating
+        ? validateRatedInput({ name, sheetId, ...rated }, ratedAvailable)
+        : validateInput({ name, sheetId, counts }, available);
   const errors: FieldErrors = attempted ? validate() : {};
   // Count problems (e.g. more than the sheet has) are flagged immediately, not only after submit.
   const liveErrors: FieldErrors = attempted
     ? errors
-    : byRating
-      ? validateRating(rated, ratedAvailable)
-      : validateCounts(counts, available);
+    : mixed
+      ? validateMix(counts, rated, available, ratedAvailable)
+      : byRating
+        ? validateRating(rated, ratedAvailable)
+        : validateCounts(counts, available);
+
+  function selectSource(option: SourceOption) {
+    setSourceKey(option.key);
+    setSubmitError(null);
+    const codeforces = option.split?.codeforces;
+    if (!codeforces) return;
+    // Start from the sheet's whole Codeforces rating range.
+    const { min, max } = codeforces;
+    setRatingMin(Math.floor(min / CF_RATING_STEP) * CF_RATING_STEP);
+    setRatingMax(Math.ceil(max / CF_RATING_STEP) * CF_RATING_STEP);
+  }
 
   const setCount = (d: Difficulty, value: string) => {
     setRawCounts((c) => ({ ...c, [d]: value }));
@@ -168,19 +274,33 @@ export function CreateSetForm() {
     setAttempted(true);
     setSubmitError(null);
     const found = validate();
-    if (Object.keys(found).length > 0 || !sheetId) {
+    if (Object.keys(found).length > 0 || !source) {
       if (found.name) nameRef.current?.focus();
       else if (found.sheetId) sheetRef.current?.querySelector<HTMLElement>("[role='radio']")?.focus();
-      else countsRef.current?.querySelector<HTMLElement>("[aria-invalid='true'], [role='combobox'], input")?.focus();
+      else mixRef.current?.querySelector<HTMLElement>("[aria-invalid='true'], [role='combobox'], input")?.focus();
       return;
     }
 
     setSubmitting(true);
     try {
-      const problems = await fetchSheetProblems(sheetId);
+      const problems = await source.load();
       const candidates = avoidUsed ? problems.filter((p) => !isUsed(p)) : problems;
-      const picked = byRating ? pickByRating(candidates, rated) : pickProblems(candidates, counts);
-      const set = buildProblemSet({ name, sheetId, counts: byRating ? countByDifficulty(picked) : counts }, picked);
+      const lc = split ? candidates.filter((p) => !isCodeforcesRow(p)) : candidates;
+      const cf = split ? candidates.filter(isCodeforcesRow) : candidates;
+      const picked = mixed
+        ? pickMix(lc, counts, cf, rated)
+        : byRating
+          ? pickByRating(cf, rated)
+          : pickProblems(lc, counts);
+      const set = buildProblemSet(
+        {
+          name,
+          sheetId: source.sheetId,
+          customSheetName: source.custom?.name ?? null,
+          counts: showRating ? countByDifficulty(picked) : counts,
+        },
+        picked,
+      );
       saveSet(set);
       router.push(`/sets/${set.id}`);
     } catch (err) {
@@ -225,34 +345,94 @@ export function CreateSetForm() {
 
         {/* 02 — Source */}
         <section className={styles.section} aria-labelledby="sec-source">
-          <SectionLabel n="02" id="sec-source" title="Choose a source" />
-          <RadioGroup
-            ref={sheetRef}
-            name="sheet"
-            className={styles.sheets}
-            value={sheetId}
-            onValueChange={(value) => {
-              setSheetId(value as SheetId);
-              setSubmitError(null);
-            }}
-            aria-label="Problem source"
-            aria-describedby="sheet-error"
-          >
-            {SHEETS.map((s) => (
-              <label key={s.id} className={styles.sheet} data-checked={sheetId === s.id || undefined}>
-                <span className={styles.sheetTop}>
-                  <span className={styles.sheetTags}>
-                    <span className={`mono ${styles.sheetCode}`}>{s.shortName}</span>
-                    {s.kind === "live" && <span className={`label ${styles.liveTag}`}>Live</span>}
+          <div className={styles.sectionHead}>
+            <SectionLabel n="02" id="sec-source" title="Choose a source" />
+            <CustomSheetFormatDialog
+              open={formatOpen}
+              onOpenChange={(open) => {
+                if (open) formatFocusRef.current = null; // opened by its own button: return there
+                setFormatOpen(open);
+              }}
+              returnFocus={formatFocusRef}
+              trigger={
+                <Button variant="ghost" size="icon" aria-label="Custom sheet format" title="Custom sheet format">
+                  <InfoIcon />
+                </Button>
+              }
+            />
+          </div>
+          <div className={styles.sheets}>
+            {/* display: contents, so the cards and the add card (not a radio) share one grid. */}
+            <RadioGroup
+              ref={sheetRef}
+              name="sheet"
+              className={styles.sheetGroup}
+              value={sourceKey}
+              onValueChange={(value) => {
+                const option = sources.find((s) => s.key === value);
+                if (option) selectSource(option);
+              }}
+              aria-label="Problem source"
+              aria-describedby="sheet-error"
+            >
+              {sources.map((s) => (
+                <label key={s.key} className={styles.sheet} data-checked={sourceKey === s.key || undefined}>
+                  <span className={styles.sheetTop}>
+                    <span className={styles.sheetTags}>
+                      <span className={`mono ${styles.sheetCode}`}>{s.shortName}</span>
+                      {s.live && <span className={`label ${styles.liveTag}`}>Live</span>}
+                    </span>
+                    <RadioGroupItem
+                      ref={s.key === justAdded ? addedFocusRef : undefined}
+                      value={s.key}
+                      className={styles.radioDot}
+                    />
                   </span>
-                  <RadioGroupItem value={s.id} className={styles.radioDot} />
-                </span>
-                <span className={styles.sheetName}>{s.name}</span>
-                <span className={styles.sheetDesc}>{s.description}</span>
-              </label>
-            ))}
-          </RadioGroup>
+                  <span className={styles.sheetName}>{s.name}</span>
+                  <span className={styles.sheetDesc}>{s.description}</span>
+                </label>
+              ))}
+            </RadioGroup>
+            <AddCustomSheet
+              sheets={customSheets}
+              triggerRef={addSheetRef}
+              returnFocus={addedFocusRef}
+              onAdded={(added) => {
+                const option = customSource(added);
+                setJustAdded(option.key);
+                selectSource(option);
+              }}
+              onShowFormat={() => {
+                formatFocusRef.current = addSheetRef.current;
+                setFormatOpen(true);
+              }}
+              onError={setAddError}
+            />
+          </div>
           <GroupError id="sheet-error" message={errors.sheetId} />
+
+          {addError && (
+            <div className="notice notice--error" role="alert">
+              <AlertIcon />
+              <span>{addError}</span>
+            </div>
+          )}
+
+          {source?.custom && (
+            <div className={styles.customNote}>
+              <span className="field__hint">Saved in this browser. Sets you create from it stay if you remove it.</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  removedFocusRef.current = null;
+                  setRemoving(source.custom);
+                }}
+              >
+                <TrashIcon /> Remove sheet
+              </Button>
+            </div>
+          )}
 
           {catalog.status === "error" && (
             <div className="notice notice--error" role="alert">
@@ -274,38 +454,34 @@ export function CreateSetForm() {
                 <span className="field__hint">
                   {" "}
                   — skip the {usedCount === null ? "" : `${usedCount} `}problems already in your other{" "}
-                  {sheet?.shortName} sets.
+                  {source?.custom ? source.name : source?.shortName} sets.
                 </span>
               </span>
             </label>
           )}
         </section>
 
-        {/* 03 — Difficulty mix */}
-        <section className={styles.section} aria-labelledby="sec-mix">
-          <SectionLabel n="03" id="sec-mix" title={byRating ? "Set the rating range" : "Set the difficulty mix"} />
-          {byRating ? (
-            <RatingFields
-              fieldsetRef={countsRef}
-              min={ratingMin}
-              max={ratingMax}
-              rawCount={rawRatedCount}
-              available={ratedAvailable}
-              loading={catalog.status === "loading"}
-              errors={liveErrors}
-              onRange={(min, max) => {
-                setRatingMin(min);
-                setRatingMax(max);
-                setSubmitError(null);
-              }}
-              onCount={(v) => {
-                setRawRatedCount(v);
-                setSubmitError(null);
-              }}
-            />
-          ) : (
-            <>
-              <div className={styles.presets} role="group" aria-label="Presets">
+        {/* 03 — Problem mix */}
+        <section ref={mixRef} className={styles.section} aria-labelledby="sec-mix">
+          <SectionLabel
+            n="03"
+            id="sec-mix"
+            title={mixed ? "Set the problem mix" : byRating ? "Set the rating range" : "Set the difficulty mix"}
+          />
+          {mixed && (
+            <p className="field__hint">
+              This sheet has LeetCode and Codeforces problems. Pick LeetCode problems by difficulty and Codeforces
+              problems by rating, and the set gets both. Either can be 0.
+            </p>
+          )}
+          {showDifficulty && (
+            <div className={styles.picker}>
+              {mixed && (
+                <h3 className={styles.pickerTitle}>
+                  LeetCode <span className="label">by difficulty</span>
+                </h3>
+              )}
+              <div className={styles.presets} role="group" aria-label={mixed ? "LeetCode presets" : "Presets"}>
                 {PRESETS.map((p) => (
                   <Button
                     key={p.label}
@@ -328,7 +504,9 @@ export function CreateSetForm() {
               </div>
 
               <Fieldset ref={countsRef} className={styles.fieldset} aria-describedby="counts-error">
-                <FieldsetLegend className="visually-hidden">Number of problems per difficulty</FieldsetLegend>
+                <FieldsetLegend className="visually-hidden">
+                  {mixed ? "Number of LeetCode problems per difficulty" : "Number of problems per difficulty"}
+                </FieldsetLegend>
                 <div className={styles.counts}>
                   {DIFFICULTIES.map((d) => (
                     <CountField
@@ -353,9 +531,40 @@ export function CreateSetForm() {
                   ))}
                 </div>
               </Fieldset>
-              <GroupError id="counts-error" message={errors.counts} />
-            </>
+            </div>
           )}
+          {showRating && (
+            <div className={styles.picker}>
+              {mixed && (
+                <h3 className={styles.pickerTitle}>
+                  Codeforces <span className="label">by rating</span>
+                </h3>
+              )}
+              <RatingFields
+                fieldsetRef={ratingRef}
+                legend={
+                  mixed ? "Codeforces rating range and number of problems" : "Rating range and number of problems"
+                }
+                minCount={mixed ? 0 : 1}
+                min={ratingMin}
+                max={ratingMax}
+                rawCount={rawRatedCount}
+                available={ratedAvailable}
+                loading={catalog.status === "loading"}
+                errors={liveErrors}
+                onRange={(min, max) => {
+                  setRatingMin(min);
+                  setRatingMax(max);
+                  setSubmitError(null);
+                }}
+                onCount={(v) => {
+                  setRawRatedCount(v);
+                  setSubmitError(null);
+                }}
+              />
+            </div>
+          )}
+          <GroupError id="counts-error" message={errors.counts} />
         </section>
       </div>
 
@@ -373,18 +582,25 @@ export function CreateSetForm() {
             </div>
             <div>
               <dt className="label">Source</dt>
-              <dd className={sheet ? undefined : styles.placeholder}>{sheet?.name ?? "Not selected"}</dd>
+              <dd className={source ? undefined : styles.placeholder}>{source?.name ?? "Not selected"}</dd>
             </div>
-            <div className={styles.specMix}>
-              <dt className="label">{byRating ? "Rating" : "Mix"}</dt>
-              <dd>
-                {byRating ? (
-                  <span className="mono tabular">{ratingRange(ratingMin, ratingMax)}</span>
-                ) : (
-                  <MixBar counts={counts} total={total} />
-                )}
-              </dd>
-            </div>
+            {showDifficulty && (
+              <div className={styles.specMix}>
+                <dt className="label">{mixed ? "LeetCode" : "Mix"}</dt>
+                <dd>
+                  <MixBar counts={counts} total={difficultyTotal} />
+                </dd>
+              </div>
+            )}
+            {showRating && (
+              <div>
+                <dt className="label">{mixed ? "Codeforces" : "Rating"}</dt>
+                <dd className="mono tabular">
+                  {ratingRange(ratingMin, ratingMax)}
+                  {mixed && <span className="label"> · {ratedTotal} problems</span>}
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="label">Total</dt>
               <dd className={`mono tabular ${styles.specTotal}`}>
@@ -417,6 +633,28 @@ export function CreateSetForm() {
       <p className="visually-hidden" aria-live="polite">
         {submitting ? "Fetching problems and creating your set." : ""}
       </p>
+
+      <ConfirmDialog
+        open={removing !== null}
+        eyebrow="Confirm removal"
+        title={`Remove “${removing?.name ?? ""}”?`}
+        confirmLabel="Remove sheet"
+        returnFocus={removedFocusRef}
+        onCancel={() => setRemoving(null)}
+        onConfirm={() => {
+          if (!removing) return;
+          // The button that opened this goes with the sheet.
+          removedFocusRef.current = addSheetRef.current;
+          deleteCustomSheet(removing.id);
+          setSourceKey(null);
+          setRemoving(null);
+        }}
+      >
+        <p>
+          This removes the sheet from this browser. Sets you created from it are kept. You can add the file again at any
+          time.
+        </p>
+      </ConfirmDialog>
     </form>
   );
 }
@@ -427,6 +665,8 @@ function RatingFields({
   max,
   rawCount,
   available,
+  legend,
+  minCount,
   loading,
   errors,
   onRange,
@@ -437,6 +677,9 @@ function RatingFields({
   max: number;
   rawCount: string;
   available: number | undefined;
+  legend: string;
+  /** 0 when this is one of two pickers, so the set can take none from it. */
+  minCount: number;
   loading: boolean;
   errors: FieldErrors;
   onRange: (min: number, max: number) => void;
@@ -467,7 +710,7 @@ function RatingFields({
       </div>
 
       <Fieldset ref={fieldsetRef} className={styles.fieldset} aria-describedby="rating-hint rating-error">
-        <FieldsetLegend className="visually-hidden">Rating range and number of problems</FieldsetLegend>
+        <FieldsetLegend className="visually-hidden">{legend}</FieldsetLegend>
         <div className={styles.counts}>
           {ends.map((e) => (
             <div
@@ -499,7 +742,7 @@ function RatingFields({
             label="Problems"
             noun="problems"
             raw={rawCount}
-            min={1}
+            min={minCount}
             max={Math.min(RATED_COUNT_MAX, available ?? RATED_COUNT_MAX)}
             available={loading ? "loading" : available}
             error={errors.count}

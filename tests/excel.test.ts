@@ -436,6 +436,30 @@ test("optional Rating column: Codeforces ratings round-trip; validated; blank al
   assert.match(errors(withRating(1450.5)), /Rating “1450\.5” must be a whole number/);
 });
 
+test("optional CustomSheet column: a Custom set keeps its sheet's name through export and import", async () => {
+  const set = buildProblemSet(
+    { name: "Mine", sheetId: "custom", customSheetName: "Graphs", counts: { easy: 1, medium: 0, hard: 0 } },
+    [catalog[1]!],
+    0,
+  );
+  const back = ok(parseWorkbook(await readXlsx((await writeXlsx(buildWorkbook([set], 0))).buffer), 0)).sets[0]!.set;
+  assert.deepEqual([back.sheetId, back.customSheetName], ["custom", "Graphs"]);
+
+  const withSheet = (source: string, name: Cell) =>
+    parseWorkbook([
+      table("ProblemSets", [
+        [...SET_HEAD, "CustomSheet"],
+        ["S1", "Set", source, "2026-10-31", name],
+      ]),
+      problemsSheet(prob("S1", 1)),
+    ]);
+  assert.equal(ok(withSheet("Custom", "Graphs")).sets[0]!.set.customSheetName, "Graphs");
+  assert.equal(ok(withSheet("Custom", null)).sets[0]!.set.customSheetName, null, "the name is optional");
+  assert.equal(ok(withSheet("Striver A2Z", "Graphs")).sets[0]!.set.customSheetName, null, "only Custom sets have one");
+  assert.match(errors(withSheet("Custom", "x".repeat(61))), /row 2: CustomSheet is longer than 60 characters/);
+  assert.match(errors(withSheet("Custom", true)), /row 2: CustomSheet must be text/);
+});
+
 test("optional LeetCodeURL column: read when present, validated, blank allowed", () => {
   const withLc = (lc: Cell) =>
     parseWorkbook([

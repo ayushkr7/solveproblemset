@@ -40,7 +40,7 @@ const STEPS = [
   {
     n: "A",
     title: "Configure",
-    body: "Name the set, choose a sheet, LeetCode or Codeforces, and set the difficulty mix or rating range.",
+    body: "Name the set, choose a sheet, LeetCode, Codeforces or your own Excel sheet, and set the difficulty mix or rating range.",
   },
   {
     n: "B",

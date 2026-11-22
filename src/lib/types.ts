@@ -16,7 +16,7 @@ export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
 export const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 };
 
 /** Identifier of a problem source. Add new sources in `src/data/sheets.ts`. */
-export type SheetId = "striver-a2z" | "striver-180" | "neetcode-blind75" | "leetcode" | "codeforces";
+export type SheetId = "striver-a2z" | "striver-180" | "neetcode-blind75" | "leetcode" | "codeforces" | "custom";
 
 /** A problem as it exists in a source sheet (read-only catalog data). */
 export interface CatalogProblem {
@@ -32,6 +32,19 @@ export interface CatalogProblem {
   order: number;
   /** Codeforces problem rating (800–3500); absent for other sources. */
   rating?: number;
+}
+
+/** A problem sheet the person added from an Excel workbook. Stored in this browser. */
+export interface CustomSheet {
+  schemaVersion: typeof SCHEMA_VERSION;
+  id: string;
+  /** Unique among the person's sheets, ignoring case. */
+  name: string;
+  /** The workbook it came from. */
+  fileName: string;
+  /** ISO timestamp. */
+  addedAt: string;
+  problems: CatalogProblem[];
 }
 
 export interface DifficultyCounts {
@@ -95,6 +108,8 @@ export interface ProblemSet {
   id: string;
   name: string;
   sheetId: SheetId;
+  /** The custom sheet a `custom` set came from, by name, so it still reads right once that sheet is removed. */
+  customSheetName: string | null;
   /** ISO timestamp. Never changes, including on Restart. */
   createdAt: string;
   /** ISO timestamp of the last modification. */

@@ -10,6 +10,7 @@
  * keep import.ts reading older versions. New columns should be optional so
  * earlier files stay importable.
  */
+import { CF_RATING_MAX, CF_RATING_MIN } from "../sources/codeforces";
 import { DIFFICULTY_LABEL, type Difficulty, type SheetId } from "../types";
 
 export const FORMAT_VERSION = 2;
@@ -19,6 +20,8 @@ export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsh
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 export const MAX_SETS = 200;
 export const MAX_PROBLEMS = 500;
+/** Custom sheets live in the browser's limited storage. */
+export const MAX_CUSTOM_PROBLEMS = 2000;
 export const SET_ID_MAX = 64;
 export const PROBLEM_NAME_MAX = 200;
 export const TOPIC_MAX = 80;
@@ -36,6 +39,7 @@ export const SOURCE_SHEET_LABEL: Record<SheetId, string> = {
   "neetcode-blind75": "NeetCode Blind 75",
   leetcode: "LeetCode",
   codeforces: "Codeforces",
+  custom: "Custom",
 };
 
 export const DIFFICULTY_VALUE: Record<Difficulty, string> = DIFFICULTY_LABEL;
@@ -64,6 +68,8 @@ export interface ColumnSpec<K extends string = string> {
   header: string;
   /** Column must be present, and every row needs a value. */
   required: boolean;
+  /** Tag in the format guide for an optional column, when plain "optional" would mislead. */
+  optionalLabel?: string;
   /** Accepted values / type, as shown in the format guide. */
   format: string;
   width: number;
@@ -85,7 +91,9 @@ const SET_ID_COLUMN = {
   width: 9,
 } as const;
 
-export const SETS_SHEET: SheetSpec<"setId" | "name" | "source" | "createdAt" | "elapsed" | "state" | "version"> = {
+export const SETS_SHEET: SheetSpec<
+  "setId" | "name" | "source" | "createdAt" | "elapsed" | "state" | "version" | "customSheet"
+> = {
   name: "ProblemSets",
   description: "One row per problem set: its details and practice-timer progress.",
   columns: [
@@ -130,6 +138,13 @@ export const SETS_SHEET: SheetSpec<"setId" | "name" | "source" | "createdAt" | "
       format: `Format version of the file: ${FORMAT_VERSION}. Exports fill it in; blank means ${FORMAT_VERSION}.`,
       width: 15,
     },
+    {
+      key: "customSheet",
+      header: "CustomSheet",
+      required: false,
+      format: "For a Custom set, the name of its custom sheet. Leave blank for other sources.",
+      width: 26,
+    },
   ],
   example: [
     {
@@ -140,6 +155,7 @@ export const SETS_SHEET: SheetSpec<"setId" | "name" | "source" | "createdAt" | "
       elapsed: "1830",
       state: "Paused",
       version: "2",
+      customSheet: "",
     },
     {
       setId: "S2",
@@ -149,6 +165,7 @@ export const SETS_SHEET: SheetSpec<"setId" | "name" | "source" | "createdAt" | "
       elapsed: "0",
       state: "NotStarted",
       version: "2",
+      customSheet: "",
     },
   ],
 };
@@ -287,6 +304,116 @@ export const PROBLEMS_SHEET: SheetSpec<
 };
 
 export const WORKBOOK_SPEC: readonly SheetSpec[] = [SETS_SHEET, PROBLEMS_SHEET];
+
+/**
+ * A custom problem sheet: Striver's A2Z layout, with the problem's link on
+ * LeetCode, Codeforces or both. A row with a CodeforcesURL is a Codeforces
+ * problem and needs a Rating; any other row is a LeetCode problem and needs a
+ * Difficulty. LeetCode problems are picked by difficulty and Codeforces ones by
+ * rating, so one set can mix both. It is read from the first worksheet, whatever its name, and its headers
+ * are matched loosely, since these files are made by hand rather than exported.
+ */
+export const CUSTOM_SHEET: SheetSpec<"leetCodeUrl" | "codeforcesUrl" | "sNo" | "title" | "difficulty" | "rating"> = {
+  name: "Problems",
+  description: "One row per problem, on the first worksheet of the file. The worksheet can have any name.",
+  columns: [
+    {
+      key: "sNo",
+      header: "SNo",
+      required: true,
+      format: "Whole number from 1, unique in the sheet. Sets the problem order.",
+      width: 8,
+      numFmt: "0",
+    },
+    {
+      key: "title",
+      header: "Problem",
+      required: true,
+      format: `Text, up to ${PROBLEM_NAME_MAX} characters.`,
+      width: 40,
+    },
+    {
+      key: "difficulty",
+      header: "Difficulty",
+      required: false,
+      optionalLabel: "LeetCode rows",
+      format:
+        `${orList(Object.values(DIFFICULTY_VALUE))}. Required for LeetCode problems. ` +
+        "Optional for Codeforces ones, which otherwise take it from their Rating.",
+      width: 12,
+    },
+    {
+      key: "rating",
+      header: "Rating",
+      required: false,
+      optionalLabel: "Codeforces rows",
+      format:
+        `Codeforces rating, a whole number from ${CF_RATING_MIN} to ${CF_RATING_MAX}. Required for Codeforces problems, ` +
+        "which are picked by rating range. With no Difficulty it also sets one: below 1200 is Easy, below 1800 is Medium, the rest are Hard.",
+      width: 9,
+      numFmt: "0",
+    },
+    {
+      key: "leetCodeUrl",
+      header: "LeetCodeURL",
+      required: false,
+      optionalLabel: "or CodeforcesURL",
+      format: "The problem on LeetCode, as a full web address.",
+      width: 48,
+    },
+    {
+      key: "codeforcesUrl",
+      header: "CodeforcesURL",
+      required: false,
+      optionalLabel: "or LeetCodeURL",
+      format:
+        "The problem on Codeforces, as a full web address. Each row needs at least one of these two links; a row with this one counts as a Codeforces problem.",
+      width: 48,
+    },
+  ],
+  example: [
+    {
+      leetCodeUrl: "https://leetcode.com/problems/two-sum/",
+      codeforcesUrl: "",
+      sNo: "1",
+      title: "Two Sum",
+      difficulty: "Easy",
+      rating: "",
+    },
+    {
+      leetCodeUrl: "https://leetcode.com/problems/3sum/",
+      codeforcesUrl: "",
+      sNo: "2",
+      title: "3 Sum",
+      difficulty: "Medium",
+      rating: "",
+    },
+    {
+      leetCodeUrl: "",
+      codeforcesUrl: "https://codeforces.com/problemset/problem/4/A",
+      sNo: "3",
+      title: "Watermelon",
+      difficulty: "",
+      rating: "800",
+    },
+    {
+      leetCodeUrl: "",
+      codeforcesUrl: "https://codeforces.com/problemset/problem/1/A",
+      sNo: "4",
+      title: "Theatre Square",
+      difficulty: "",
+      rating: "1000",
+    },
+    {
+      leetCodeUrl: "https://leetcode.com/problems/trapping-rain-water/",
+      codeforcesUrl: "",
+      sNo: "5",
+      title: "Trapping Rain Water",
+      difficulty: "Hard",
+      rating: "",
+    },
+  ],
+};
 
 // ---------------------------------------------------------------------------
 // Version 1 (one set per file) — import only.

@@ -12,6 +12,8 @@ export const STORAGE_KEYS = {
   legacyTheme: `${LEGACY_STORAGE_PREFIX}:theme`,
   setPrefix: `${STORAGE_PREFIX}:set:`,
   set: (id: string) => `${STORAGE_PREFIX}:set:${id}`,
+  customSheetPrefix: `${STORAGE_PREFIX}:sheet:`,
+  customSheet: (id: string) => `${STORAGE_PREFIX}:sheet:${id}`,
 } as const;
 
 export class StorageWriteError extends Error {

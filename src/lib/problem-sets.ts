@@ -89,6 +89,7 @@ export function parseProblemSet(raw: string | null): ProblemSet | null {
     id: o.id,
     name: o.name,
     sheetId: o.sheetId,
+    customSheetName: typeof o.customSheetName === "string" ? o.customSheetName : null,
     createdAt,
     updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : createdAt,
     requested: { easy: num(req.easy, 0), medium: num(req.medium, 0), hard: num(req.hard, 0) },

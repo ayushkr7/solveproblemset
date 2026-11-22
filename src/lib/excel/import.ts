@@ -53,12 +53,16 @@ export interface ImportedSet {
   set: ProblemSet;
 }
 
-export type ImportResult =
-  { ok: true; format: number; sets: ImportedSet[]; warnings: string[] } | { ok: false; errors: string[] };
+export interface ImportFailure {
+  ok: false;
+  errors: string[];
+}
+
+export type ImportResult = { ok: true; format: number; sets: ImportedSet[]; warnings: string[] } | ImportFailure;
 
 const MAX_REPORTED_ERRORS = 50;
 
-export function importFailure(...errors: string[]): ImportResult {
+export function importFailure(...errors: string[]): ImportFailure {
   return {
     ok: false,
     errors:
@@ -71,7 +75,7 @@ export function importFailure(...errors: string[]): ImportResult {
 // ---------------------------------------------------------------------------
 // Cell readers
 
-function isBlank(c: Cell): boolean {
+export function isBlank(c: Cell): boolean {
   if (c === null) return true;
   if (typeof c === "string") return c.trim() === "";
   if (typeof c === "object" && !(c instanceof Date)) return c.text.trim() === "" && c.href.trim() === "";
@@ -79,7 +83,7 @@ function isBlank(c: Cell): boolean {
 }
 
 /** Text content, trimmed; `null` for values that aren't text-like (dates, booleans). */
-function cellText(c: Cell): string | null {
+export function cellText(c: Cell): string | null {
   if (c === null) return "";
   if (typeof c === "string") return c.trim();
   if (typeof c === "number") return String(c);
@@ -90,7 +94,7 @@ function cellText(c: Cell): string | null {
 const NUMERIC = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
 
 /** Numbers, or text that is purely a number ("12", " 7.5 "). */
-function cellNumber(c: Cell): number | "blank" | "invalid" {
+export function cellNumber(c: Cell): number | "blank" | "invalid" {
   if (isBlank(c)) return "blank";
   if (typeof c === "number") return Number.isFinite(c) ? c : "invalid";
   const s = typeof c === "string" ? c.trim() : null;
@@ -98,7 +102,7 @@ function cellNumber(c: Cell): number | "blank" | "invalid" {
 }
 
 /** Short, quoted rendering of a cell for error messages. */
-function show(c: Cell): string {
+export function show(c: Cell): string {
   const s =
     c instanceof Date
       ? Number.isNaN(c.getTime())
@@ -121,7 +125,7 @@ function isHttpUrl(s: string): boolean {
 }
 
 /** A hyperlink cell counts by its visible text if that is a URL, else by its target. */
-function cellUrl(c: Cell): string | null {
+export function cellUrl(c: Cell): string | null {
   if (c !== null && typeof c === "object" && !(c instanceof Date)) {
     const text = c.text.trim();
     if (isHttpUrl(text)) return text;
@@ -151,7 +155,7 @@ function cellIsoDate(c: Cell): string | null {
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }
 
-function lookup<T extends string>(c: Cell, values: Record<T, string>): T | null {
+export function lookup<T extends string>(c: Cell, values: Record<T, string>): T | null {
   const s = cellText(c);
   if (!s) return null;
   const key = valueKey(s);
@@ -161,7 +165,7 @@ function lookup<T extends string>(c: Cell, values: Record<T, string>): T | null 
 // ---------------------------------------------------------------------------
 // Worksheet reading
 
-interface Rec<K extends string> {
+export interface Rec<K extends string> {
   row: number;
   get: (key: K) => Cell;
   /** Where a column's value lives, for messages: "Problems, row 7". */
@@ -171,9 +175,8 @@ interface Rec<K extends string> {
 const hasSheet = (tables: readonly SheetTable[], name: string) => tables.some((t) => t.name.trim() === name);
 
 /**
- * Locate a worksheet and map its row-1 headers to the spec's columns.
- * Returns the non-blank data rows, or `null` when the sheet is absent or its
- * headers are unusable (an error is recorded unless an optional sheet is absent).
+ * Locate a worksheet by name and read it (see readTable). Returns `null` when it
+ * is absent, recording an error unless the sheet is optional.
  */
 function readSheet<K extends string>(
   tables: readonly SheetTable[],
@@ -193,11 +196,25 @@ function readSheet<K extends string>(
     }
     return null;
   }
+  return readTable(table, spec, errors);
+}
 
+/**
+ * Map a worksheet's row-1 headers to the spec's columns and return its non-blank
+ * data rows, or `null` when the headers are unusable (an error is recorded).
+ * `headerKey` decides which headers count as the same; by default they must match exactly.
+ */
+export function readTable<K extends string>(
+  table: SheetTable,
+  spec: SheetSpec<K>,
+  errors: string[],
+  headerKey: (header: string) => string = (h) => h,
+): Rec<K>[] | null {
+  const sheetName = table.name.trim();
   const header = table.rows[0]?.row === 1 ? table.rows[0] : undefined;
   if (!header || header.cells.every(isBlank)) {
     errors.push(
-      `${spec.name}: row 1 must contain the column headers (${spec.columns.map((c) => c.header).join(", ")}).`,
+      `${sheetName}: row 1 must contain the column headers (${spec.columns.map((c) => c.header).join(", ")}).`,
     );
     return null;
   }
@@ -206,23 +223,24 @@ function readSheet<K extends string>(
   header.cells.forEach((c, i) => {
     const h = cellText(c);
     if (!h) return;
-    if (found.has(h)) errors.push(`${spec.name}: the column “${h}” appears more than once in row 1.`);
-    else found.set(h, i);
+    const key = headerKey(h);
+    if (found.has(key)) errors.push(`${sheetName}: the column “${h}” appears more than once in row 1.`);
+    else found.set(key, i);
   });
 
-  const missing = spec.columns.filter((c) => c.required && !found.has(c.header));
+  const missing = spec.columns.filter((c) => c.required && !found.has(headerKey(c.header)));
   if (missing.length > 0) {
     const names = missing.map((c) => {
       const near = [...found.keys()].find((h) => valueKey(h) === valueKey(c.header));
       return near ? `“${c.header}” (found “${near}” — check the spelling)` : `“${c.header}”`;
     });
-    errors.push(`${spec.name}: missing required column${missing.length > 1 ? "s" : ""} ${names.join(", ")} in row 1.`);
+    errors.push(`${sheetName}: missing required column${missing.length > 1 ? "s" : ""} ${names.join(", ")} in row 1.`);
     return null;
   }
 
   const index = new Map<K, number>();
   for (const c of spec.columns) {
-    const i = found.get(c.header);
+    const i = found.get(headerKey(c.header));
     if (i !== undefined) index.set(c.key, i);
   }
   return (
@@ -234,7 +252,7 @@ function readSheet<K extends string>(
           const i = index.get(key);
           return i === undefined ? null : (r.cells[i] ?? null);
         },
-        at: () => `${spec.name}, row ${r.row}`,
+        at: () => `${sheetName}, row ${r.row}`,
       }))
       // Rows with nothing in the schema's columns (spacing, notes elsewhere) are skipped.
       .filter((rec) => !spec.columns.every((c) => isBlank(rec.get(c.key))))
@@ -262,6 +280,7 @@ type ProblemKey = (typeof PROBLEMS_SHEET.columns)[number]["key"];
 interface SetFields {
   name: string;
   sheetId: SheetId;
+  customSheetName: string | null;
   createdAt: string;
   session: SessionState;
 }
@@ -328,6 +347,13 @@ function parseSetFields(rec: Rec<SetKey>, now: number, errors: string[], warning
     );
   }
 
+  const customCell = rec.get("customSheet");
+  const customSheet = cellText(customCell);
+  if (customSheet === null) errors.push(`${rec.at("customSheet")}: CustomSheet must be text, not ${show(customCell)}.`);
+  else if (customSheet.length > NAME_MAX) {
+    errors.push(`${rec.at("customSheet")}: CustomSheet is longer than ${NAME_MAX} characters.`);
+  }
+
   const createdCell = rec.get("createdAt");
   const createdAt = cellIsoDate(createdCell);
   if (!createdAt) {
@@ -340,7 +366,7 @@ function parseSetFields(rec: Rec<SetKey>, now: number, errors: string[], warning
 
   const session = parseSession(rec, now, errors, warnings);
   return errors.length === before && name && sheetId && createdAt && session
-    ? { name, sheetId, createdAt, session }
+    ? { name, sheetId, customSheetName: (sheetId === "custom" && customSheet) || null, createdAt, session }
     : null;
 }
 
@@ -613,6 +639,7 @@ function assemble(setRecs: Rec<SetKey>[], problemRecs: Rec<ProblemKey>[], format
           id: createId(),
           name: data!.name,
           sheetId: data!.sheetId,
+          customSheetName: data!.customSheetName,
           createdAt: data!.createdAt,
           updatedAt: iso,
           requested: countByDifficulty(problems),
@@ -649,7 +676,7 @@ function parseV1(tables: readonly SheetTable[], now: number): ImportResult {
         ? REF
         : k === "elapsed" || k === "state"
           ? (sessionRec?.get(k) ?? null)
-          : k === "version"
+          : k === "version" || k === "customSheet"
             ? null
             : setRec.get(k),
     at: (k) => ((k === "elapsed" || k === "state") && sessionRec ? sessionRec.at(k) : setRec.at("name")),

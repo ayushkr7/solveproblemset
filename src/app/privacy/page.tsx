@@ -43,14 +43,15 @@ const SECTIONS: LegalSection[] = [
         </p>
         <ul>
           <li>your problem sets, including their names, selected sources, problems and completion status;</li>
+          <li>custom problem sheets you add, including their names, file names and problems;</li>
           <li>your practice timings and timer state; and</li>
           <li>your display preference (light or dark theme).</li>
         </ul>
         <p>
           This information is not transmitted to us, and we are therefore unable to view, recover or delete it on your
-          behalf. You may delete an individual set from the My Sets page at any time, or remove all stored information
-          by clearing this site&rsquo;s data in your browser settings. When you export a set, a copy is saved to your
-          device or, if you so choose, to your Google Drive as described below.
+          behalf. You may delete an individual set from the My Sets page, or a custom sheet from the Create page, at any
+          time, or remove all stored information by clearing this site&rsquo;s data in your browser settings. When you
+          export a set, a copy is saved to your device or, if you so choose, to your Google Drive as described below.
         </p>
       </>
     ),
@@ -80,8 +81,8 @@ const SECTIONS: LegalSection[] = [
             Drive.
           </li>
           <li>
-            <strong>Import:</strong> you select a workbook in your Google Drive, and its sets are added to the Service
-            in your browser once you confirm.
+            <strong>Import:</strong> you select a workbook in your Google Drive, and its sets or custom problem sheet
+            are added to the Service in your browser once you confirm.
           </li>
         </ul>
         <p>

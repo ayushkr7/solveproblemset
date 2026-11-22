@@ -40,6 +40,7 @@ export async function GET() {
 ## Problem sources
 
 ${sources.join("\n")}
+- Custom sheets: users can add their own problem list from an Excel file${DRIVE_ENABLED ? " or Google Drive" : ""} and generate sets from it. It stays in their browser.
 
 ## Optional
 

@@ -37,10 +37,10 @@ const SECTIONS: LegalSection[] = [
     title: "Description of the Service",
     body: (
       <p>
-        The Service allows you to create practice sets from curated problem sheets and from LeetCode and Codeforces, to
-        time your practice, and to import and export sets as Excel workbooks, either on your device or in your Google
-        Drive. The Service is provided free of charge and does not require an account. We may add, modify or remove
-        features, or suspend or discontinue the Service, at any time and without notice.
+        The Service allows you to create practice sets from curated problem sheets, from LeetCode and Codeforces, and
+        from problem sheets you add, to time your practice, and to import and export sets as Excel workbooks, either on
+        your device or in your Google Drive. The Service is provided free of charge and does not require an account. We
+        may add, modify or remove features, or suspend or discontinue the Service, at any time and without notice.
       </p>
     ),
   },
@@ -60,10 +60,11 @@ const SECTIONS: LegalSection[] = [
     title: "Your data and backups",
     body: (
       <p>
-        Your problem sets and timings are stored solely in your browser, and you retain all rights to them. Because this
-        data is never transmitted to us, we are unable to restore it if it is lost, for example when browser data is
-        cleared, when you change browser or device, or when you use private browsing. You are responsible for
-        maintaining your own backups, which you can create by exporting a workbook.
+        Your problem sets, custom sheets and timings are stored solely in your browser, and you retain all rights to
+        them. You are responsible for the content of any custom sheet you add, including its links. Because this data is
+        never transmitted to us, we are unable to restore it if it is lost, for example when browser data is cleared,
+        when you change browser or device, or when you use private browsing. You are responsible for maintaining your
+        own backups, which you can create by exporting a workbook.
       </p>
     ),
   },

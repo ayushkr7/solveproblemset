@@ -149,9 +149,66 @@ export function pickByRating(
     }
   }
 
-  return ratings
-    .flatMap((r) => sample(buckets.get(r)!, quota.get(r)!, random))
-    .sort((a, b) => a.rating! - b.rating! || a.order - b.order);
+  return (
+    ratings
+      .flatMap((r) => sample(buckets.get(r)!, quota.get(r)!, random))
+      .sort((a, b) => a.rating! - b.rating! || a.order - b.order)
+      // Sets list problems by `order`, and a custom sheet's SNo needn't follow its ratings.
+      .map((p, i) => ({ ...p, order: i + 1 }))
+  );
+}
+
+/**
+ * Checks for a set that mixes both pickers: counts per difficulty and a rating
+ * range. Either side may be 0, but not both.
+ */
+export function validateMix(
+  counts: DifficultyCounts,
+  rating: RatingRequest,
+  available?: DifficultyCounts,
+  ratedAvailable?: number,
+): FieldErrors {
+  const { counts: _noneByDifficulty, ...byDifficulty } = validateCounts(counts, available);
+  const errors: FieldErrors = byDifficulty;
+  if (rating.count === 0) {
+    if (rating.min > rating.max) errors.rating = "The lowest rating must not be above the highest.";
+  } else if (Number.isInteger(rating.count) && rating.count < 0) {
+    errors.count = "Enter a whole number, 0 or more.";
+  } else {
+    Object.assign(errors, validateRating(rating, ratedAvailable));
+  }
+  const total = DIFFICULTIES.reduce((sum, d) => sum + (counts[d] || 0), 0) + (rating.count || 0);
+  if (total === 0 && !errors.easy && !errors.medium && !errors.hard && !errors.count) {
+    errors.counts = "Add at least one problem.";
+  }
+  return errors;
+}
+
+export function validateMixInput(
+  input: { name: string; sheetId: SheetId | null; counts: DifficultyCounts; rating: RatingRequest },
+  available?: DifficultyCounts,
+  ratedAvailable?: number,
+): FieldErrors {
+  return {
+    ...validateMeta(input.name, input.sheetId),
+    ...validateMix(input.counts, input.rating, available, ratedAvailable),
+  };
+}
+
+/**
+ * One set from two pools: some problems by difficulty, others by rating. Within
+ * each difficulty, the first pool's come first, then the second's by rating.
+ */
+export function pickMix(
+  byDifficulty: readonly CatalogProblem[],
+  counts: DifficultyCounts,
+  byRating: readonly CatalogProblem[],
+  rating: RatingRequest,
+  random: () => number = Math.random,
+): CatalogProblem[] {
+  const first = pickProblems(byDifficulty, counts, random);
+  const second = rating.count > 0 ? pickByRating(byRating, rating, random) : [];
+  return [...first, ...second].map((p, i) => ({ ...p, order: i + 1 }));
 }
 
 export function countByDifficulty(problems: readonly Pick<CatalogProblem, "difficulty">[]): DifficultyCounts {
@@ -206,12 +263,8 @@ export function pickProblems(
   return picked.sort(compareProblems);
 }
 
-const urlKey = (url: string) =>
-  url
-    .trim()
-    .toLowerCase()
-    .replace(/[?#].*$/, "")
-    .replace(/\/+$/, "");
+/** A URL for comparing. The query stays: on judges like POJ it is what identifies the problem (?id=1000). */
+export const urlKey = (url: string) => url.trim().toLowerCase().replace(/#.*$/, "").replace(/\/+$/, "");
 
 /**
  * Matcher for "skip problems already in my other sets". Problems match by id,
@@ -232,7 +285,7 @@ export function createId(): string {
 }
 
 export function buildProblemSet(
-  input: { name: string; sheetId: SheetId; counts: DifficultyCounts },
+  input: { name: string; sheetId: SheetId; customSheetName?: string | null; counts: DifficultyCounts },
   problems: readonly CatalogProblem[],
   now: number = Date.now(),
 ): ProblemSet {
@@ -242,6 +295,7 @@ export function buildProblemSet(
     id: createId(),
     name: input.name.trim(),
     sheetId: input.sheetId,
+    customSheetName: input.customSheetName ?? null,
     createdAt: iso,
     updatedAt: iso,
     requested: { ...input.counts },

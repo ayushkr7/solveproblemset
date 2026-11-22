@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LabeledCheckbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { ToastProvider, Toaster, useToast } from "@/components/ui/toast";
-import { getSheet } from "@/data/sheets";
+import { setSource } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
 import { DRIVE_FOLDER_NAME, DriveError, saveProblemSetsToDrive } from "@/lib/drive/transfer";
 import { downloadProblemSets, preloadXlsx } from "@/lib/excel/transfer";
@@ -322,7 +322,7 @@ function SetCard({
     });
   }, [scrollIntoView]);
 
-  const sheet = getSheet(set.sheetId);
+  const sheet = setSource(set);
   const status =
     stats.total > 0 && stats.solved === stats.total
       ? { key: "complete", label: "Complete" }

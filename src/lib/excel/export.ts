@@ -47,6 +47,7 @@ export function buildWorkbook(sets: readonly ProblemSet[], now: number): Workboo
       elapsed: elapsed / 1000,
       state,
       version: FORMAT_VERSION,
+      customSheet: set.customSheetName,
     };
   });
 
