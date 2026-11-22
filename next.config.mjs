@@ -21,6 +21,9 @@ const nextConfig = {
     },
   },
   allowedDevOrigins: lanAddresses,
+  experimental: {
+    agentUpgrade: "security",
+  },
 };
 
 // Initialize Cloudflare bindings for local development.
