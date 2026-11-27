@@ -162,7 +162,8 @@
   transform: translate(-2px, -2px);
 }
 
-.card:has(.link:focus-visible) {
+.card:has(.link:focus-visible),
+.row:has(.link:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
@@ -248,27 +249,27 @@
   background: var(--status-c);
 }
 
-.card[data-status="running"] .status {
+[data-status="running"] .status {
   --status-c: var(--accent);
 }
 
-.card[data-status="running"] .statusDot {
+[data-status="running"] .statusDot {
   animation: pulse 1.4s ease-in-out infinite;
 }
 
-.card[data-status="paused"] .status {
+[data-status="paused"] .status {
   --status-c: var(--medium);
 }
 
-.card[data-status="progress"] .status {
+[data-status="progress"] .status {
   --status-c: var(--ink-2);
 }
 
-.card[data-status="complete"] .status {
+[data-status="complete"] .status {
   --status-c: var(--success);
 }
 
-.card[data-status="complete"] .statusDot {
+[data-status="complete"] .statusDot {
   border-radius: 50%;
 }
 
@@ -404,4 +405,195 @@
 .emptyTitle {
   font-size: clamp(1.5rem, 4vw, 2.25rem);
   letter-spacing: -0.03em;
+}
+
+/* ---------- Layout toggle ---------- */
+
+.headFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.viewToggle {
+  display: inline-flex;
+}
+
+.viewToggle > :global(.btn) + :global(.btn) {
+  margin-left: -1px;
+}
+
+.viewToggle > :global(.btn[aria-pressed="true"]) {
+  position: relative;
+  --btn-border: var(--accent);
+  --btn-bg: var(--accent-soft);
+  --btn-fg: var(--ink);
+}
+
+/* ---------- Compact view ---------- */
+
+.list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(140px, 200px) auto;
+  gap: 4px 16px;
+  align-items: center;
+  padding: 8px 12px 8px 0;
+  transition: background-color 0.15s;
+}
+
+.row + .row {
+  border-top: 1px solid var(--rule);
+}
+
+.row:hover {
+  background: var(--surface-hover);
+}
+
+.row[data-selected] {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.row[data-highlight] {
+  animation: arrive 1.6s var(--ease);
+}
+
+.rowSkeleton {
+  display: grid;
+  grid-template-columns: none;
+  gap: 8px;
+  padding: 16px;
+}
+
+.rowMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowName {
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  min-width: 0;
+}
+
+.rowMeta .status {
+  gap: 6px;
+  font-size: 0.625rem;
+}
+
+.rowMeta .statusDot {
+  width: 6px;
+  height: 6px;
+}
+
+.rowMeta .code {
+  margin-right: 0;
+}
+
+.rowSource {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 24ch;
+}
+
+.rowSheet {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowProgress {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.rowSolved {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.rowPercent {
+  min-width: 4ch;
+  text-align: right;
+}
+
+.rowActions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.iconBtn {
+  padding-inline: 0;
+  width: 36px;
+}
+
+.rowActions .delete {
+  margin-left: 0;
+}
+
+.rowExport {
+  padding-inline: 8px;
+  gap: 4px;
+}
+
+.rowOpen {
+  margin-left: 4px;
+}
+
+@media (max-width: 719px) {
+  /* [✓] name ........ [actions]
+         progress ─────────────── */
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding-bottom: 12px;
+  }
+
+  .rowProgress {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    padding-right: 4px;
+  }
+
+  .rowSheet,
+  .rowOpenLabel {
+    display: none;
+  }
+
+  .rowOpen {
+    padding-inline: 0;
+    width: 36px;
+  }
 }

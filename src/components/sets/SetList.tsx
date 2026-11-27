@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { ArrowRightIcon, CloudIcon, DownloadIcon, PlusIcon, TrashIcon } from "@/components/Icons";
+import { ArrowRightIcon, CloudIcon, DownloadIcon, GridIcon, ListIcon, PlusIcon, TrashIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import { LabeledCheckbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { ToastProvider, Toaster, useToast } from "@/components/ui/toast";
+import { Toggle } from "@/components/ui/toggle";
 import { setSource } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
 import { DRIVE_FOLDER_NAME, DriveError, saveProblemSetsToDrive } from "@/lib/drive/transfer";
 import { downloadProblemSets, preloadXlsx } from "@/lib/excel/transfer";
 import { formatDate, formatDateTime, plural } from "@/lib/format";
 import { deleteSet, getListSnapshot } from "@/lib/problem-sets";
+import { STORAGE_KEYS, readRaw, writeRaw } from "@/lib/storage";
 import { getStats } from "@/lib/timer";
 import type { ProblemSet } from "@/lib/types";
 import { ImportSets } from "./SetTransfer";
@@ -37,6 +39,29 @@ const EXPORT_ITEMS = {
 /** What an export covers: everything, the selection, or one card's set. */
 type ExportTarget = "all" | "selected" | `set:${string}`;
 
+/** How the list is laid out: full cards (default) or compact rows. */
+type SetView = "cards" | "compact";
+
+/**
+ * The remembered layout. Starts as "cards" on the server and first render (so
+ * hydration matches), then picks up the saved choice from this browser.
+ */
+function useSetView(): [SetView, (view: SetView) => void] {
+  const [view, setView] = useState<SetView>("cards");
+  useEffect(() => {
+    if (readRaw(STORAGE_KEYS.setView) === "compact") setView("compact");
+  }, []);
+  const update = (next: SetView) => {
+    setView(next);
+    try {
+      writeRaw(STORAGE_KEYS.setView, next);
+    } catch {
+      /* not remembered in this browser mode; the choice still applies now */
+    }
+  };
+  return [view, update];
+}
+
 export function SetList() {
   return (
     <ToastProvider>
@@ -54,6 +79,7 @@ function SetListPage() {
   const [exportTarget, setExportTarget] = useState<ExportTarget | null>(null);
   const exporting = useRef(false);
   const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [view, setView] = useSetView();
 
   useEffect(() => {
     if (highlightIds.size === 0) return;
@@ -152,20 +178,23 @@ function SetListPage() {
           )}
         </div>
         {sets && sets.length > 0 && totals && (
-          <dl className={styles.totals}>
-            <div>
-              <dt className="label">Sets</dt>
-              <dd className="mono tabular">{sets.length}</dd>
-            </div>
-            <div>
-              <dt className="label">Problems</dt>
-              <dd className="mono tabular">{totals.problems}</dd>
-            </div>
-            <div>
-              <dt className="label">Solved</dt>
-              <dd className="mono tabular">{totals.solved}</dd>
-            </div>
-          </dl>
+          <div className={styles.headFoot}>
+            <dl className={styles.totals}>
+              <div>
+                <dt className="label">Sets</dt>
+                <dd className="mono tabular">{sets.length}</dd>
+              </div>
+              <div>
+                <dt className="label">Problems</dt>
+                <dd className="mono tabular">{totals.problems}</dd>
+              </div>
+              <div>
+                <dt className="label">Solved</dt>
+                <dd className="mono tabular">{totals.solved}</dd>
+              </div>
+            </dl>
+            <ViewToggle view={view} onChange={setView} />
+          </div>
         )}
       </header>
 
@@ -228,22 +257,34 @@ function SetListPage() {
       )}
 
       {sets === null ? (
-        <ul className={styles.grid} aria-busy="true" aria-label="Loading problem sets">
-          {[0, 1, 2].map((i) => (
-            <li key={i} className={`${styles.card} ${styles.cardSkeleton}`}>
-              <span className={`skeleton ${styles.skLine}`} style={{ width: "40%" }} />
-              <span className={`skeleton ${styles.skLine}`} style={{ width: "75%", height: 22 }} />
-              <span className={`skeleton ${styles.skLine}`} style={{ width: "100%", height: 6 }} />
-            </li>
-          ))}
-        </ul>
+        view === "compact" ? (
+          <ul className={styles.list} aria-busy="true" aria-label="Loading problem sets">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className={`${styles.row} ${styles.rowSkeleton}`}>
+                <span className={`skeleton ${styles.skLine}`} style={{ width: "45%", height: 16 }} />
+                <span className={`skeleton ${styles.skLine}`} style={{ width: "25%" }} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className={styles.grid} aria-busy="true" aria-label="Loading problem sets">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className={`${styles.card} ${styles.cardSkeleton}`}>
+                <span className={`skeleton ${styles.skLine}`} style={{ width: "40%" }} />
+                <span className={`skeleton ${styles.skLine}`} style={{ width: "75%", height: 22 }} />
+                <span className={`skeleton ${styles.skLine}`} style={{ width: "100%", height: 6 }} />
+              </li>
+            ))}
+          </ul>
+        )
       ) : sets?.length === 0 ? (
         <EmptyState />
       ) : (
-        <ul className={styles.grid}>
+        <ul className={view === "compact" ? styles.list : styles.grid}>
           {sets?.map((s, i) => (
-            <SetCard
+            <SetItem
               key={s.id}
+              view={view}
               set={s}
               index={sets.length - i}
               selected={selected.has(s.id)}
@@ -298,6 +339,54 @@ interface SetCardProps {
   onDelete: () => void;
 }
 
+function ViewToggle({ view, onChange }: { view: SetView; onChange: (view: SetView) => void }) {
+  return (
+    <div className={styles.viewToggle} role="group" aria-label="Layout">
+      <Toggle size="sm" pressed={view === "cards"} onPressedChange={() => onChange("cards")}>
+        <GridIcon /> Cards
+      </Toggle>
+      <Toggle size="sm" pressed={view === "compact"} onPressedChange={() => onChange("compact")}>
+        <ListIcon /> Compact
+      </Toggle>
+    </div>
+  );
+}
+
+function SetItem({ view, ...props }: SetCardProps & { view: SetView }) {
+  return view === "compact" ? <SetRow {...props} /> : <SetCard {...props} />;
+}
+
+/** Scrolls the item into view when `active` turns on (a just-imported set). */
+function useScrollIntoView(active: boolean) {
+  const ref = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (!active) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    ref.current?.scrollIntoView({
+      block: "nearest",
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }, [active]);
+  return ref;
+}
+
+function setStatus(set: ProblemSet, stats: ReturnType<typeof getStats>) {
+  return stats.total > 0 && stats.solved === stats.total
+    ? { key: "complete", label: "Complete" }
+    : set.session.status === "running"
+      ? { key: "running", label: "Timer running" }
+      : set.session.status === "paused"
+        ? { key: "paused", label: "Paused" }
+        : stats.solved > 0 || set.session.status === "stopped"
+          ? { key: "progress", label: "In progress" }
+          : { key: "new", label: "Not started" };
+}
+
+/** "Resume" for a set that's under way; "Open" for one not started or already complete. */
+function openLabel(status: ReturnType<typeof setStatus>) {
+  return status.key === "new" || status.key === "complete" ? "Open" : "Resume";
+}
+
 function SetCard({
   set,
   index,
@@ -310,29 +399,10 @@ function SetCard({
   onExport,
   onDelete,
 }: SetCardProps) {
-  const ref = useRef<HTMLLIElement>(null);
+  const ref = useScrollIntoView(scrollIntoView);
   const stats = getStats(set);
-
-  useEffect(() => {
-    if (!scrollIntoView) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    ref.current?.scrollIntoView({
-      block: "nearest",
-      behavior: reduce ? "auto" : "smooth",
-    });
-  }, [scrollIntoView]);
-
   const sheet = setSource(set);
-  const status =
-    stats.total > 0 && stats.solved === stats.total
-      ? { key: "complete", label: "Complete" }
-      : set.session.status === "running"
-        ? { key: "running", label: "Timer running" }
-        : set.session.status === "paused"
-          ? { key: "paused", label: "Paused" }
-          : stats.solved > 0 || set.session.status === "stopped"
-            ? { key: "progress", label: "In progress" }
-            : { key: "new", label: "Not started" };
+  const status = setStatus(set, stats);
 
   return (
     <li
@@ -422,7 +492,105 @@ function SetCard({
           </TransferMenu>
         </div>
         <Link href={`/sets/${set.id}`} className="btn btn--sm" tabIndex={-1} aria-hidden="true">
-          {stats.solved > 0 || set.session.status !== "idle" ? "Resume" : "Open"} <ArrowRightIcon />
+          {openLabel(status)} <ArrowRightIcon />
+        </Link>
+      </div>
+    </li>
+  );
+}
+
+/** Compact view: one dense row per set with the same key facts and actions as the card. */
+function SetRow({
+  set,
+  selected,
+  onSelect,
+  highlight,
+  scrollIntoView,
+  exporting,
+  exportDisabled,
+  onExport,
+  onDelete,
+}: SetCardProps) {
+  const ref = useScrollIntoView(scrollIntoView);
+  const stats = getStats(set);
+  const sheet = setSource(set);
+  const status = setStatus(set, stats);
+  const open = openLabel(status);
+
+  return (
+    <li
+      ref={ref}
+      className={styles.row}
+      data-status={status.key}
+      data-selected={selected || undefined}
+      data-highlight={highlight || undefined}
+    >
+      <span className={styles.select}>
+        <LabeledCheckbox checked={selected} onCheckedChange={onSelect} label={`Select ${set.name}`} />
+      </span>
+
+      <div className={styles.rowMain}>
+        <h2 className={styles.rowName}>
+          <Link href={`/sets/${set.id}`} className={styles.link}>
+            {set.name}
+          </Link>
+        </h2>
+        <p className={styles.rowMeta}>
+          <span className={styles.status}>
+            <span className={styles.statusDot} aria-hidden="true" />
+            {status.label}
+          </span>
+          <span className={styles.rowSource} title={sheet.name}>
+            <span className={`mono ${styles.code}`}>{sheet.shortName}</span>
+            <span className={styles.rowSheet}>{sheet.name}</span>
+          </span>
+          <time dateTime={set.createdAt} title={formatDateTime(set.createdAt)}>
+            {formatDate(set.createdAt)}
+          </time>
+        </p>
+      </div>
+
+      <div className={styles.rowProgress}>
+        <span className="mono tabular">
+          <span className={styles.rowSolved}>{stats.solved}</span>/{stats.total}
+          <span className="visually-hidden"> solved</span>
+        </span>
+        <Progress value={stats.percent} aria-label={`${set.name} completion`} />
+        <span className={`mono tabular ${styles.rowPercent}`}>{stats.percent}%</span>
+      </div>
+
+      <div className={styles.rowActions}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className={`${styles.delete} ${styles.iconBtn}`}
+          onClick={onDelete}
+          aria-label={`Delete ${set.name}`}
+          title="Delete"
+        >
+          <TrashIcon />
+        </Button>
+        <TransferMenu
+          size="sm"
+          variant="ghost"
+          className={styles.rowExport}
+          onSelect={onExport}
+          onPreload={preloadXlsx}
+          busy={exportDisabled}
+          pending={exporting}
+          aria-label={`Export ${set.name} to Excel`}
+          {...EXPORT_ITEMS}
+        >
+          {exporting ? <span className="spinner" aria-hidden="true" /> : <DownloadIcon />}
+        </TransferMenu>
+        <Link
+          href={`/sets/${set.id}`}
+          className={`btn btn--sm ${styles.rowOpen}`}
+          tabIndex={-1}
+          aria-hidden="true"
+          title={open}
+        >
+          <span className={styles.rowOpenLabel}>{open}</span> <ArrowRightIcon />
         </Link>
       </div>
     </li>
