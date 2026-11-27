@@ -762,6 +762,23 @@ main:focus {
   outline: 0;
 }
 
+/* Select and menu popups grow out of their trigger (Base UI sets --transform-origin). */
+.select-popup,
+.menu-popup {
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 0.15s var(--ease),
+    transform 0.15s var(--ease);
+}
+
+.select-popup[data-starting-style],
+.select-popup[data-ending-style],
+.menu-popup[data-starting-style],
+.menu-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
 .select-list {
   padding: 4px 0;
 }
@@ -877,14 +894,15 @@ main:focus {
   backdrop-filter: blur(2px);
 }
 
-.dialog-overlay[data-open] {
-  animation: overlay-in 0.2s var(--ease);
+/* Enter and exit: Base UI sets data-starting-style / data-ending-style and
+   waits for the transition before unmounting. */
+.dialog-overlay {
+  transition: opacity 0.2s var(--ease);
 }
 
-@keyframes overlay-in {
-  from {
-    opacity: 0;
-  }
+.dialog-overlay[data-starting-style],
+.dialog-overlay[data-ending-style] {
+  opacity: 0;
 }
 
 .dialog {
@@ -914,15 +932,22 @@ main:focus {
   width: min(760px, calc(100vw - 32px));
 }
 
-.dialog[data-open] {
-  animation: dialog-in 0.2s var(--ease);
+.dialog {
+  transition:
+    opacity 0.2s var(--ease),
+    transform 0.2s var(--ease);
 }
 
-@keyframes dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
+.dialog[data-starting-style],
+.dialog[data-ending-style] {
+  opacity: 0;
+  transform: translateY(8px) scale(0.985);
+}
+
+/* Closing is a touch quicker than opening, so dismissals feel immediate. */
+.dialog-overlay[data-ending-style],
+.dialog[data-ending-style] {
+  transition-duration: 0.15s;
 }
 
 /* Head and foot stay in view while long dialog content scrolls. */
@@ -1100,7 +1125,15 @@ main:focus {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   box-shadow: var(--shadow-dialog);
-  animation: dialog-in 0.2s var(--ease);
+  transition:
+    opacity 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+
+.toast[data-starting-style],
+.toast[data-ending-style] {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 .toast svg {
@@ -1132,6 +1165,34 @@ main:focus {
 .toast--error {
   background: var(--danger);
   color: var(--paper);
+}
+
+/* ---------- Page entrance ---------- */
+
+/* A short fade when a page mounts. Opacity only on the page itself, so fixed
+   elements inside it (e.g. the mobile timer bar) aren't displaced; the page
+   header also rises slightly. */
+@media (prefers-reduced-motion: no-preference) {
+  main > * {
+    animation: page-in 0.3s var(--ease);
+  }
+
+  .page-head {
+    animation: rise-in 0.45s var(--ease);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -765,3 +765,60 @@
     align-items: end;
   }
 }
+
+/* ---------- Motion ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Hero: copy rises in line by line, then the figure, then its progress bar fills. */
+  .heroCopy > * {
+    animation: rise 0.6s var(--ease) backwards;
+  }
+
+  .heroCopy > :nth-child(2) {
+    animation-delay: 0.06s;
+  }
+
+  .heroCopy > :nth-child(3) {
+    animation-delay: 0.12s;
+  }
+
+  .heroCopy > :nth-child(4) {
+    animation-delay: 0.18s;
+  }
+
+  .heroCopy > :nth-child(5) {
+    animation-delay: 0.24s;
+  }
+
+  .figure {
+    animation: rise 0.7s var(--ease) 0.2s backwards;
+  }
+
+  .figBar span {
+    animation: fill 1s var(--ease) 0.7s backwards;
+  }
+
+  /* Sections fade up as they scroll into view (browsers with scroll-driven animations). */
+  @supports (animation-timeline: view()) {
+    .sectionHead,
+    .feature,
+    .step {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 50%;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes fill {
+  from {
+    width: 0;
+  }
+}
