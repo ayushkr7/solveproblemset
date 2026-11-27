@@ -32,6 +32,36 @@
   border-bottom: 0;
 }
 
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The 44px target doesn't add height to the section heading. */
+.sectionHead :global(.btn) {
+  margin-block: -10px;
+}
+
+/* One of two pickers in "Set the problem mix" (a custom sheet with both platforms). */
+.picker {
+  display: grid;
+  gap: 16px;
+}
+
+.picker + .picker {
+  padding-top: 20px;
+  border-top: 1px dashed var(--rule);
+}
+
+.pickerTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+}
+
 .sectionTitle {
   display: flex;
   align-items: baseline;
@@ -69,6 +99,10 @@
   .sheets {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
+}
+
+.sheetGroup {
+  display: contents;
 }
 
 .sheet {
@@ -170,6 +204,72 @@
 .sheetDesc {
   font-size: 0.875rem;
   color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* The last card: adds a custom sheet. A button, so it sits outside the radio group. */
+.addSheet {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed var(--rule-strong);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.addSheet:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+
+.addSheet:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.addSheet[aria-disabled="true"] {
+  cursor: progress;
+}
+
+/* The menu's chevron, opposite the plus like a card's radio dot. */
+.addSheet > svg {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-2);
+}
+
+.addIcon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid currentColor;
+  color: var(--accent);
+}
+
+.addIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.customNote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 8px 14px;
+  border: 1px dashed var(--rule);
 }
 
 .noticeBody {

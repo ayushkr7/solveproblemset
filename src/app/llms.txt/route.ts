@@ -9,15 +9,20 @@ export const dynamic = "force-static";
 export async function GET() {
   const page = (path: string) => new URL(path, SITE.url).href;
 
-  const sources = await Promise.all(
-    SHEETS.map(async (s) => {
-      const pick = s.selectBy === "rating" ? "Rating range 800–3500." : "Picked by difficulty (Easy / Medium / Hard).";
-      // Live sources' descriptions already say where they come from.
-      const head = s.kind === "sheet" ? `- [${s.name}](${s.homepage}) (${s.author})` : `- [${s.name}](${s.homepage})`;
-      const count = s.kind === "sheet" ? ` ${(await s.load()).length} problems.` : "";
-      return `${head}: ${s.description}${count} ${pick}`;
-    }),
-  );
+  const describe = (list: typeof SHEETS) =>
+    Promise.all(
+      list.map(async (s) => {
+        const pick =
+          s.selectBy === "rating" ? "Rating range 800–3500." : "Picked by difficulty (Easy / Medium / Hard).";
+        // Live sources' descriptions already say where they come from.
+        const head = s.kind === "sheet" ? `- [${s.name}](${s.homepage}) (${s.author})` : `- [${s.name}](${s.homepage})`;
+        const count = s.kind === "sheet" ? ` ${(await s.load()).length} problems.` : "";
+        return `${head}: ${s.description}${count} ${pick}`;
+      }),
+    );
+  // Same order as the site: live sources, custom sheets, then the curated sheets.
+  const live = await describe(SHEETS.filter((s) => s.kind === "live"));
+  const curated = await describe(SHEETS.filter((s) => s.kind === "sheet"));
 
   const backup = DRIVE_ENABLED
     ? "Sets can be exported to and imported from an Excel file or the user's own Google Drive."
@@ -25,7 +30,7 @@ export async function GET() {
 
   const body = `# ${SITE.name}
 
-> ${SITE.name} is a free web app for coding-interview and competitive-programming practice. It generates problem sets from curated DSA sheets, LeetCode and Codeforces by difficulty or rating, and records the time spent on each problem.
+> ${SITE.name} is a free web app for coding-interview and competitive-programming practice. It generates problem sets from Codeforces, LeetCode, the user's own custom sheets and curated DSA sheets (Striver's and NeetCode's) by difficulty or rating, and records the time spent on each problem.
 
 - Problems link to their pages on the original sites; ${SITE.name} does not host problem statements or judge solutions.
 - Each solve's recorded time is the active time since the previous solve. Paused time is excluded.
@@ -39,7 +44,9 @@ export async function GET() {
 
 ## Problem sources
 
-${sources.join("\n")}
+${live.join("\n")}
+- Custom sheets: users can add their own problem list from an Excel file${DRIVE_ENABLED ? " or Google Drive" : ""} and generate sets from it. It stays in their browser.
+${curated.join("\n")}
 
 ## Optional
 

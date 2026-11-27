@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
+import { useId, useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { AlertIcon, CloudIcon, InfoIcon, UploadIcon } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,15 +18,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
-import { getSheet } from "@/data/sheets";
+import { setSource } from "@/data/sheets";
 import { useProblemSets } from "@/hooks/useProblemSets";
-import {
-  DRIVE_ENABLED,
-  DRIVE_FOLDER_NAME,
-  DriveError,
-  pickDriveWorkbook,
-  readDriveWorkbook,
-} from "@/lib/drive/transfer";
+import { useWorkbookPicker } from "@/hooks/useWorkbookPicker";
+import { DRIVE_ENABLED, DRIVE_FOLDER_NAME, readDriveWorkbook } from "@/lib/drive/transfer";
 import { formatClock, plural } from "@/lib/format";
 import { applyPlan, planErrors, planImport, type PlanAction, type PlanItem, type PlanOutcome } from "@/lib/excel/plan";
 import {
@@ -40,7 +35,7 @@ import {
   XLSX_EXTENSION,
   type SheetSpec,
 } from "@/lib/excel/schema";
-import { XLSX_ACCEPT, preloadXlsx, readWorkbookFile, type ImportResult, type ImportedSet } from "@/lib/excel/transfer";
+import { preloadXlsx, readWorkbookFile, type ImportResult, type ImportedSet } from "@/lib/excel/transfer";
 import { getListSnapshot, saveNewSets } from "@/lib/problem-sets";
 import { StorageWriteError } from "@/lib/storage";
 import { elapsedMs, getStats } from "@/lib/timer";
@@ -60,6 +55,13 @@ interface Results extends PlanOutcome {
   warnings: string[];
 }
 
+/** A workbook that failed validation. */
+export interface InvalidWorkbook {
+  fileName: string;
+  errors: string[];
+  source: TransferLocation;
+}
+
 /**
  * "Import sets" + format-guide button, and the import flow:
  * file (this device or Google Drive) → validate → preview & resolve name
@@ -69,68 +71,33 @@ interface Results extends PlanOutcome {
 /** `onImported` runs when the results summary is dismissed (the sets are saved before that). */
 export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) => void }) {
   const importRef = useRef<HTMLButtonElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const busy = useRef(false);
-  const [reading, setReading] = useState(false);
-  const [invalid, setInvalid] = useState<{ fileName: string; errors: string[]; source: TransferLocation } | null>(null);
+  const [invalid, setInvalid] = useState<InvalidWorkbook | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [results, setResults] = useState<Results | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const toast = useToast();
 
+  const { reading, choose, inputProps } = useWorkbookPicker<ImportResult>({
+    readFile: readWorkbookFile,
+    readDrive: readDriveWorkbook,
+    triggerRef: importRef,
+    onError: toast.error,
+    onResult: (result, fileName, source) => {
+      if (result.ok) setPreview({ fileName, format: result.format, sets: result.sets, warnings: result.warnings });
+      else setInvalid({ fileName, errors: result.errors, source });
+    },
+  });
+
   // focusableWhenDisabled: a natively disabled button drops keyboard focus,
   // leaving nothing for the dialogs to return focus to.
   const unavailable = reading || preview !== null;
-  const chooseFile = (source: TransferLocation = "device") => {
-    if (busy.current) return;
-    if (source === "drive") void handleDrive();
-    else fileRef.current?.click();
-  };
-
-  function showResult(fileName: string, source: TransferLocation, result: ImportResult) {
-    if (result.ok) setPreview({ fileName, format: result.format, sets: result.sets, warnings: result.warnings });
-    else setInvalid({ fileName, errors: result.errors, source });
-  }
-
-  async function handleFile(file: File) {
-    if (busy.current) return; // one import at a time
-    busy.current = true;
-    setReading(true);
-    try {
-      showResult(file.name, "device", await readWorkbookFile(file));
-    } finally {
-      busy.current = false;
-      setReading(false);
-    }
-  }
-
-  /** Sign in (popup) → Google Picker → download → validate. Must start from a click. */
-  async function handleDrive() {
-    if (busy.current) return;
-    busy.current = true;
-    preloadXlsx();
-    try {
-      const picked = await pickDriveWorkbook();
-      // Picker leaves focus on <body> when it closes.
-      if (document.activeElement === document.body) importRef.current?.focus();
-      if (!picked) return;
-      setReading(true);
-      showResult(picked.name, "drive", await readDriveWorkbook(picked));
-    } catch (err) {
-      if (!(err instanceof DriveError)) toast.error("The workbook couldn’t be read from Google Drive. Try again.");
-      else if (err.kind !== "cancelled") toast.error(err.message);
-    } finally {
-      busy.current = false;
-      setReading(false);
-    }
-  }
 
   return (
     <>
       <div className={styles.importGroup}>
         <TransferMenu
           triggerRef={importRef}
-          onSelect={chooseFile}
+          onSelect={choose}
           onPreload={preloadXlsx}
           busy={unavailable}
           pending={reading}
@@ -157,65 +124,26 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
             </Button>
           }
         />
-        <input
-          ref={fileRef}
-          type="file"
-          accept={XLSX_ACCEPT}
-          hidden
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = ""; // so choosing the same file again still fires
-            if (file) void handleFile(file);
-          }}
-        />
+        <input {...inputProps} />
         <span className="visually-hidden" role="status">
           {reading ? "Reading workbook…" : ""}
         </span>
       </div>
 
-      <Dialog open={invalid !== null} onOpenChange={(open) => !open && setInvalid(null)}>
-        <DialogContent eyebrow="Import failed" returnFocus={importRef}>
-          {invalid && (
-            <>
-              <DialogBody>
-                <DialogHeader>
-                  <DialogTitle>This file can’t be imported</DialogTitle>
-                  <DialogDescription>
-                    <p>
-                      Nothing was imported and your sets are unchanged. Fix the issues below in{" "}
-                      <strong className={styles.fileName}>{invalid.fileName}</strong>, then import it again.
-                    </p>
-                  </DialogDescription>
-                </DialogHeader>
-                <ul className={styles.errors} aria-label={`${plural(invalid.errors.length, "issue")} found`}>
-                  {invalid.errors.map((e, i) => (
-                    <li key={i}>{e}</li>
-                  ))}
-                </ul>
-              </DialogBody>
-              <DialogFooter>
-                <Button
-                  onClick={() => {
-                    setInvalid(null);
-                    setGuideOpen(true);
-                  }}
-                >
-                  <InfoIcon /> Format guide
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    setInvalid(null);
-                    chooseFile(invalid.source);
-                  }}
-                >
-                  {invalid.source === "drive" ? <CloudIcon /> : <UploadIcon />} Choose another file
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <WorkbookErrorsDialog
+        invalid={invalid}
+        eyebrow="Import failed"
+        title="This file can’t be imported"
+        intro={(fileName) => (
+          <>
+            Nothing was imported and your sets are unchanged. Fix the issues below in {fileName}, then import it again.
+          </>
+        )}
+        returnFocus={importRef}
+        onClose={() => setInvalid(null)}
+        onShowFormat={() => setGuideOpen(true)}
+        onRetry={choose}
+      />
 
       <ImportPreviewDialog
         preview={preview}
@@ -241,6 +169,71 @@ export function ImportSets({ onImported }: { onImported: (sets: ProblemSet[]) =>
   );
 }
 
+/** Lists what's wrong with a workbook, with ways forward: the format guide, or another file. */
+export function WorkbookErrorsDialog({
+  invalid,
+  eyebrow,
+  title,
+  intro,
+  returnFocus,
+  onClose,
+  onShowFormat,
+  onRetry,
+}: {
+  invalid: InvalidWorkbook | null;
+  eyebrow: string;
+  title: string;
+  intro: (fileName: ReactNode) => ReactNode;
+  returnFocus: RefObject<HTMLElement | null>;
+  onClose: () => void;
+  onShowFormat: () => void;
+  onRetry: (source: TransferLocation) => void;
+}) {
+  return (
+    <Dialog open={invalid !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent eyebrow={eyebrow} returnFocus={returnFocus}>
+        {invalid && (
+          <>
+            <DialogBody>
+              <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription>
+                  <p>{intro(<strong className={styles.fileName}>{invalid.fileName}</strong>)}</p>
+                </DialogDescription>
+              </DialogHeader>
+              {/* Focusable: a long list scrolls, and keyboard users need to reach all of it. */}
+              <ul className={styles.errors} aria-label={`${plural(invalid.errors.length, "issue")} found`} tabIndex={0}>
+                {invalid.errors.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </DialogBody>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  onClose();
+                  onShowFormat();
+                }}
+              >
+                <InfoIcon /> Format guide
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  onClose();
+                  onRetry(invalid.source);
+                }}
+              >
+                {invalid.source === "drive" ? <CloudIcon /> : <UploadIcon />} Choose another file
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ---------------------------------------------------------------------------
 
 const ACTION_LABEL: Record<PlanAction, string> = {
@@ -255,7 +248,7 @@ function setSummary(set: ProblemSet): string {
     set.session.status === "idle"
       ? "timer not started"
       : `${set.session.status} at ${formatClock(elapsedMs(set.session, 0))}`;
-  return `${getSheet(set.sheetId).shortName} · ${plural(stats.total, "problem")} · ${stats.solved} solved · ${timer}`;
+  return `${setSource(set).shortName} · ${plural(stats.total, "problem")} · ${stats.solved} solved · ${timer}`;
 }
 
 function ImportPreviewDialog({
@@ -656,7 +649,7 @@ function FormatGuideDialog({
   );
 }
 
-function SheetGuide({ spec }: { spec: SheetSpec }) {
+export function SheetGuide({ spec }: { spec: SheetSpec }) {
   const headingId = useId();
   const example = spec.example ?? [];
   // Colour SetIDs consistently across both example sheets.
@@ -678,7 +671,7 @@ function SheetGuide({ spec }: { spec: SheetSpec }) {
           <div key={c.key}>
             <dt>
               <code className="mono">{c.header}</code>
-              {!c.required && <span className={styles.optional}>optional</span>}
+              {!c.required && <span className={styles.optional}>{c.optionalLabel ?? "optional"}</span>}
             </dt>
             <dd>{c.format}</dd>
           </div>

@@ -4,10 +4,12 @@
  */
 import type { ProblemSet } from "../types";
 import { buildWorkbook, exportFileName } from "./export";
-import { importFailure, parseWorkbook, type ImportResult } from "./import";
-import { MAX_FILE_BYTES, XLSX_EXTENSION, XLSX_MIME } from "./schema";
+import { parseCustomSheet, type CustomSheetResult } from "./custom-sheet";
+import { importFailure, parseWorkbook, type ImportFailure, type ImportResult } from "./import";
+import { MAX_FILE_BYTES, XLSX_EXTENSION, XLSX_MIME, type SheetTable } from "./schema";
 import { readXlsx, writeXlsx } from "./xlsx";
 
+export type { CustomSheetResult } from "./custom-sheet";
 export type { ImportResult, ImportedSet } from "./import";
 export { preloadXlsx } from "./xlsx";
 
@@ -25,7 +27,7 @@ function sniff(bytes: Uint8Array): FileKind {
 }
 
 /** The size limits every import source shares. `null` when the size is fine. */
-export function workbookSizeError(bytes: number): ImportResult | null {
+export function workbookSizeError(bytes: number): ImportFailure | null {
   if (bytes === 0) return importFailure("The file is empty.");
   if (bytes > MAX_FILE_BYTES) {
     return importFailure(
@@ -35,8 +37,10 @@ export function workbookSizeError(bytes: number): ImportResult | null {
   return null;
 }
 
-/** Read, parse and validate an uploaded workbook. Never throws; nothing is saved. */
-export async function readWorkbookFile(file: File, now: number = Date.now()): Promise<ImportResult> {
+type Parse<R> = (tables: SheetTable[]) => R;
+
+/** Check an uploaded file and hand its worksheets to `parse`. Never throws. */
+async function openWorkbookFile<R>(file: File, parse: Parse<R>): Promise<R | ImportFailure> {
   if (!file.name.toLowerCase().endsWith(XLSX_EXTENSION)) {
     const ext = /\.[^.]+$/.exec(file.name)?.[0];
     return importFailure(
@@ -53,11 +57,11 @@ export async function readWorkbookFile(file: File, now: number = Date.now()): Pr
   } catch {
     return importFailure("The file couldn't be read. Check that it's still available and try again.");
   }
-  return readWorkbookData(data, now);
+  return openWorkbook(data, parse);
 }
 
-/** Parse and validate workbook bytes from any source (a local file, Google Drive). Never throws; nothing is saved. */
-export async function readWorkbookData(data: ArrayBuffer, now: number = Date.now()): Promise<ImportResult> {
+/** Check workbook bytes from any source (a local file, Google Drive) and hand its worksheets to `parse`. Never throws. */
+async function openWorkbook<R>(data: ArrayBuffer, parse: Parse<R>): Promise<R | ImportFailure> {
   const sizeError = workbookSizeError(data.byteLength);
   if (sizeError) return sizeError;
 
@@ -73,12 +77,32 @@ export async function readWorkbookData(data: ArrayBuffer, now: number = Date.now
   }
 
   try {
-    return parseWorkbook(await readXlsx(data), now);
+    return parse(await readXlsx(data));
   } catch {
     return importFailure(
       "The workbook couldn't be opened — it may be damaged. Open it in Excel, save it again and retry.",
     );
   }
+}
+
+/** Read, parse and validate an uploaded workbook of problem sets. Never throws; nothing is saved. */
+export function readWorkbookFile(file: File, now: number = Date.now()): Promise<ImportResult> {
+  return openWorkbookFile(file, (tables) => parseWorkbook(tables, now));
+}
+
+/** Parse and validate workbook bytes holding problem sets. Never throws; nothing is saved. */
+export function readWorkbookData(data: ArrayBuffer, now: number = Date.now()): Promise<ImportResult> {
+  return openWorkbook(data, (tables) => parseWorkbook(tables, now));
+}
+
+/** Read, parse and validate an uploaded custom problem sheet. Never throws; nothing is saved. */
+export function readCustomSheetFile(file: File): Promise<CustomSheetResult> {
+  return openWorkbookFile(file, parseCustomSheet);
+}
+
+/** Parse and validate workbook bytes holding a custom problem sheet. Never throws; nothing is saved. */
+export function readCustomSheetData(data: ArrayBuffer): Promise<CustomSheetResult> {
+  return openWorkbook(data, parseCustomSheet);
 }
 
 /** Build one .xlsx holding `sets`. `all` names the file as a full backup. */

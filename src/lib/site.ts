@@ -15,7 +15,7 @@ export const SITE = {
 } as const;
 
 /** When the Privacy Policy and Terms last changed. Update it with every edit to them. */
-export const LEGAL_UPDATED = { iso: "2026-11-02", label: "2 November 2026" } as const;
+export const LEGAL_UPDATED = { iso: "2026-11-06", label: "6 November 2026" } as const;
 
 export const LEGAL_LINKS = {
   privacy: "/privacy",

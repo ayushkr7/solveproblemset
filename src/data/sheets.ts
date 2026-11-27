@@ -5,11 +5,14 @@
  * fetches upstream on the server (lib/sources/). Callers only see a Promise.
  */
 import type { LiveCatalogResponse } from "@/lib/sources/serve";
-import type { CatalogProblem, SheetId } from "@/lib/types";
+import type { CatalogProblem, ProblemSet, SheetId } from "@/lib/types";
 import { fromBlind75, fromStriverSheet } from "./problems";
 
+/** The sources in the registry. `custom` isn't one: those sheets are the person's own (lib/custom-sheets.ts). */
+export type BuiltInSheetId = Exclude<SheetId, "custom">;
+
 export interface SheetSource {
-  id: SheetId;
+  id: BuiltInSheetId;
   name: string;
   shortName: string;
   author: string;
@@ -22,7 +25,7 @@ export interface SheetSource {
   load: () => Promise<CatalogProblem[]>;
 }
 
-async function loadLive(id: SheetId): Promise<CatalogProblem[]> {
+async function loadLive(id: BuiltInSheetId): Promise<CatalogProblem[]> {
   const res = await fetch(`/api/sources/${id}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return ((await res.json()) as LiveCatalogResponse).problems;
@@ -30,17 +33,6 @@ async function loadLive(id: SheetId): Promise<CatalogProblem[]> {
 
 // Each sheet's data file is a separate chunk, fetched only when that sheet is used.
 export const SHEETS: readonly SheetSource[] = [
-  {
-    id: "leetcode",
-    name: "LeetCode",
-    shortName: "LC",
-    author: "leetcode.com",
-    description: "Free, well-liked problems fetched live: 500+ likes and at least 80% positive votes.",
-    homepage: "https://leetcode.com/problemset/",
-    kind: "live",
-    selectBy: "difficulty",
-    load: () => loadLive("leetcode"),
-  },
   {
     id: "codeforces",
     name: "Codeforces",
@@ -51,6 +43,17 @@ export const SHEETS: readonly SheetSource[] = [
     kind: "live",
     selectBy: "rating",
     load: () => loadLive("codeforces"),
+  },
+  {
+    id: "leetcode",
+    name: "LeetCode",
+    shortName: "LC",
+    author: "leetcode.com",
+    description: "Free, well-liked problems fetched live: 500+ likes and at least 80% positive votes.",
+    homepage: "https://leetcode.com/problemset/",
+    kind: "live",
+    selectBy: "difficulty",
+    load: () => loadLive("leetcode"),
   },
   {
     id: "striver-a2z",
@@ -88,13 +91,21 @@ export const SHEETS: readonly SheetSource[] = [
 ];
 
 export function isSheetId(v: unknown): v is SheetId {
-  return SHEETS.some((s) => s.id === v);
+  return v === "custom" || SHEETS.some((s) => s.id === v);
 }
 
-export function getSheet(id: SheetId): SheetSource {
+export function getSheet(id: BuiltInSheetId): SheetSource {
   const sheet = SHEETS.find((s) => s.id === id);
   if (!sheet) throw new Error(`Unknown sheet: ${id}`);
   return sheet;
+}
+
+export const CUSTOM_SHORT_NAME = "CUSTOM";
+
+/** How a saved set shows where it came from. */
+export function setSource(set: Pick<ProblemSet, "sheetId" | "customSheetName">): { name: string; shortName: string } {
+  if (set.sheetId === "custom") return { name: set.customSheetName ?? "Custom sheet", shortName: CUSTOM_SHORT_NAME };
+  return getSheet(set.sheetId);
 }
 
 export class SheetLoadError extends Error {
@@ -105,10 +116,10 @@ export class SheetLoadError extends Error {
   }
 }
 
-const cache = new Map<SheetId, Promise<CatalogProblem[]>>();
+const cache = new Map<BuiltInSheetId, Promise<CatalogProblem[]>>();
 
 /** Load a sheet's problems. Results are memoised; failures are not, so a retry re-fetches. */
-export function fetchSheetProblems(id: SheetId): Promise<CatalogProblem[]> {
+export function fetchSheetProblems(id: BuiltInSheetId): Promise<CatalogProblem[]> {
   const hit = cache.get(id);
   if (hit) return hit;
   const sheet = getSheet(id);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,8 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   cancelLabel?: string;
   tone?: "danger" | "primary";
+  /** Takes focus on close, when confirming removes the button that opened this. */
+  returnFocus?: RefObject<HTMLElement | null>;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -39,6 +41,7 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel = "Cancel",
   tone = "danger",
+  returnFocus,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -46,7 +49,7 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
-      <AlertDialogContent eyebrow={eyebrow} initialFocus={cancelRef}>
+      <AlertDialogContent eyebrow={eyebrow} initialFocus={cancelRef} returnFocus={returnFocus}>
         <AlertDialogBody>
           <AlertDialogHeader>
             <AlertDialogTitle>{title}</AlertDialogTitle>

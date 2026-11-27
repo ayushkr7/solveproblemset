@@ -31,7 +31,7 @@ interface TransferMenuProps {
   triggerRef?: Ref<HTMLButtonElement>;
   className?: string;
   size?: "sm";
-  variant?: "ghost";
+  variant?: "ghost" | "bare";
   "aria-label"?: string;
 }
 

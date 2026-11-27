@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { DifficultyBadge, DifficultyTicks } from "@/components/DifficultyBadge";
 import { ArrowRightIcon } from "@/components/Icons";
-import { SHEETS } from "@/data/sheets";
+import { CUSTOM_SHORT_NAME, SHEETS } from "@/data/sheets";
 import { DRIVE_ENABLED } from "@/lib/drive/config";
 import { countByDifficulty } from "@/lib/generate";
 import type { Difficulty } from "@/lib/types";
@@ -16,18 +16,26 @@ const FEATURES = [
   },
   {
     n: "02",
+    title: "Your own sheets",
+    body: DRIVE_ENABLED
+      ? "Bring your own list of LeetCode and Codeforces problems as an Excel file, from your device or Google Drive, and create sets from it like any built-in sheet."
+      : "Bring your own list of LeetCode and Codeforces problems as an Excel file and create sets from it like any built-in sheet.",
+    spec: "Excel · stays in your browser",
+  },
+  {
+    n: "03",
     title: "Split timing",
     body: "Each tick records the time since your previous solve — so you see exactly how long every individual problem took.",
     spec: "Δt between consecutive solves",
   },
   {
-    n: "03",
+    n: "04",
     title: "Pause without penalty",
     body: "Step away whenever you need. Paused and stopped time is excluded from every recorded duration.",
     spec: "Active time only",
   },
   {
-    n: "04",
+    n: "05",
     title: "Persistent & private",
     body: DRIVE_ENABLED
       ? "Refresh, close the tab, come back next week. Progress and the running clock are saved in your browser, never on our servers. Back up to a file or your own Google Drive when you choose."
@@ -40,7 +48,7 @@ const STEPS = [
   {
     n: "A",
     title: "Configure",
-    body: "Name the set, choose a sheet, LeetCode or Codeforces, and set the difficulty mix or rating range.",
+    body: "Name the set, choose Codeforces, LeetCode, your own custom sheet or a curated sheet, and set the difficulty mix or rating range.",
   },
   {
     n: "B",
@@ -103,8 +111,8 @@ export default async function LandingPage() {
               <span className="serif-accent">the clock.</span>
             </h1>
             <p className={styles.heroLede}>
-              Generate practice sets from curated DSA sheets, LeetCode or Codeforces by difficulty or rating, and track
-              the time spent on each problem.
+              Generate practice sets from Codeforces, LeetCode, your own custom sheets or curated DSA sheets, by
+              difficulty or rating, and track the time spent on each problem.
             </p>
             <div className={styles.ctaRow}>
               <Link href="/create" className="btn btn--primary btn--lg">
@@ -118,7 +126,8 @@ export default async function LandingPage() {
               <div>
                 <dt className="label">Sources</dt>
                 <dd className="mono">
-                  <span>{sheets.length} sheets,</span> <span>{live.map((s) => s.shortName).join(", ")}</span>
+                  <span>{live.map((s) => s.shortName).join(", ")},</span> <span>custom,</span>{" "}
+                  <span>{sheets.length} sheets</span>
                 </dd>
               </div>
               <div>
@@ -293,6 +302,18 @@ export default async function LandingPage() {
                 </p>
               </li>
             ))}
+            <li className={styles.source}>
+              <div className={styles.sourceHead}>
+                <span className={`mono ${styles.sourceCode}`}>{CUSTOM_SHORT_NAME}</span>
+                <span className="label">Yours · Excel</span>
+              </div>
+              <h3 className={styles.sourceTitle}>Custom sheet</h3>
+              <p className="muted">
+                Your own list of LeetCode and Codeforces problems, added from an Excel file
+                {DRIVE_ENABLED ? " on your device or in Google Drive" : ""}. It stays in your browser.
+              </p>
+              <p className={`label ${styles.sourceLive}`}>LeetCode by difficulty · Codeforces by rating</p>
+            </li>
             {sheetStats.map((s) => (
               <li key={s.id} className={styles.source}>
                 <div className={styles.sourceHead}>

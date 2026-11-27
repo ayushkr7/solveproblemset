@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: "Solve Problemset — practice, measured", template: "%s · Solve Problemset" },
   description:
-    "Build personalised DSA practice sets from Striver's sheets, NeetCode's Blind 75, LeetCode and Codeforces, time every problem, and pick up exactly where you left off.",
+    "Build personalised DSA practice sets from Codeforces, LeetCode, your own custom sheets, Striver's sheets and NeetCode's Blind 75, time every problem, and pick up exactly where you left off.",
 };
 
 export const viewport: Viewport = {

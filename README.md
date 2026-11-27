@@ -1,6 +1,6 @@
 # Solve Problemset
 
-A client-side DSA / competitive-programming practice tracker. Build personalised problem sets from Striver's A2Z and 180 sheets, NeetCode's Blind 75, or live, quality-filtered pools from LeetCode (by difficulty) and Codeforces (by rating). Time every solve and resume where you left off. Sets persist in `localStorage`.
+A client-side DSA / competitive-programming practice tracker. Build personalised problem sets from live, quality-filtered pools from Codeforces (by rating) and LeetCode (by difficulty), your own Excel sheet, Striver's A2Z and 180 sheets, or NeetCode's Blind 75. Time every solve and resume where you left off. Sets persist in `localStorage`.
 
 ```bash
 npm install
@@ -21,7 +21,7 @@ src/
                           alert-dialog, checkbox, dropdown-menu, radio-group, number-field, select, toggle, toast,
                           progress, field, input. Styled by globals.css tokens, not Tailwind; use
                           these instead of native controls or new primitives
-    create/               problem-set form
+    create/               problem-set form, adding custom sheets
     sets/                 previous-sets listing
     set-detail/           timer panel, problems table, detail page
   data/
@@ -30,7 +30,7 @@ src/
     striver180problemset.ts  Striver 180 problems (source of truth)
     neetcodeBlind75.ts    NeetCode Blind 75 problems (source of truth)
     problems.ts           maps those files onto CatalogProblem
-  hooks/                  useProblemSets / useProblemSet (external store), useNow
+  hooks/                  useProblemSets / useProblemSet / useCustomSheets (external stores), useWorkbookPicker, useNow
   lib/
     timer.ts              pure session/timing logic (fully unit-tested)
     problem-sets.ts       localStorage repository + subscribable store
@@ -47,7 +47,7 @@ tests/                    timer, excel, drive, sources (bundled sheets), live-so
 - Elapsed = banked active time + the live running segment. Paused or stopped time never accrues.
 - Marking a problem solved records `elapsed − lastSolveMark` (the first solve measures from Start), then moves the mark.
 - Unticking the most recent solve rolls the mark back, so its time carries into the next solve. Unticking an older solve clears only that problem.
-- Problems ticked before Start are saved as *untimed*. Any solved problem's time can be edited by hand.
+- Problems ticked before Start are saved as _untimed_. Any solved problem's time can be edited by hand.
 - The timer stores timestamps (`runningSince`), not tick counts, so reloads, navigation and throttled background tabs don't cause drift.
 
 ## Storage
@@ -59,7 +59,8 @@ Each set is stored under its own key, `solve-problemset:set:<uuid>`, so sets are
 On My Sets you can select sets and export them (**Export selected**, **Export all**, or a card's **Export**) into a single `.xlsx` workbook, and import any number of sets from one workbook (**Import sets**). The info button next to Import sets shows the format in the app.
 
 Format version 2 has two worksheets, linked by `SetID`:
-- `ProblemSets`: one row per set, with `SetID`, `SetName`, `SourceSheet` and `CreatedAt`, plus optional `ElapsedSeconds`, `TimerState` and `FormatVersion`.
+
+- `ProblemSets`: one row per set, with `SetID`, `SetName`, `SourceSheet` and `CreatedAt`, plus optional `ElapsedSeconds`, `TimerState`, `FormatVersion` and `CustomSheet`.
 - `Problems`: one row per problem, with `SetID`, `ProblemName`, `ProblemURL`, `Difficulty`, `Status`, `TimeMinutes` and `Order`, plus optional `LeetCodeURL`, `Topic` and `Rating` (Codeforces).
 
 Single-set files in format 1 (`ProblemSet` / `Problems` / `Session` worksheets) can still be imported.
@@ -84,7 +85,7 @@ Without credentials the menus are hidden and the buttons work with local files o
 
 1. In the [Google Cloud console](https://console.cloud.google.com/), create a project and enable the **Google Drive API** and the **Google Picker API**.
 2. Configure the OAuth consent screen (Google Auth Platform): choose External and add the `https://www.googleapis.com/auth/drive.file` scope. It is a non-sensitive scope, so the app doesn't need Google's verification. While the app is in Testing, only the test users you add can sign in.
-3. Create an **OAuth client ID** of type *Web application*. Under Authorized JavaScript origins, add `http://localhost:3000` and your production origin. You don't need redirect URIs.
+3. Create an **OAuth client ID** of type _Web application_. Under Authorized JavaScript origins, add `http://localhost:3000` and your production origin. You don't need redirect URIs.
 4. Create an **API key**. Restrict it to the Google Picker API, and to your origins as HTTP referrers.
 5. Set these at build time, in `.env.local` locally or in the build environment for `npm run deploy`. `NEXT_PUBLIC_*` values are inlined into the client bundle when it is built:
 
@@ -101,16 +102,28 @@ Google sign-in only works from origins registered on the client. A LAN address s
 
 Before switching the app from Testing to In production, fill in the consent screen's Branding page with the values in `src/lib/site.ts`:
 
-| Field | Value |
-|---|---|
-| App name | Solve Problemset |
-| User support email / developer contact | support@solveproblemset.com |
-| Application home page | https://solveproblemset.com |
-| Application privacy policy link | https://solveproblemset.com/privacy |
-| Application terms of service link | https://solveproblemset.com/terms |
-| Authorized domains | solveproblemset.com |
+| Field                                  | Value                               |
+| -------------------------------------- | ----------------------------------- |
+| App name                               | Solve Problemset                    |
+| User support email / developer contact | support@solveproblemset.com         |
+| Application home page                  | https://solveproblemset.com         |
+| Application privacy policy link        | https://solveproblemset.com/privacy |
+| Application terms of service link      | https://solveproblemset.com/terms   |
+| Authorized domains                     | solveproblemset.com                 |
 
 The privacy policy (`src/app/privacy/page.tsx`) describes, in plain terms, what the app does with Drive: access limited to files it saves or the person picks, no server-side copies, no sharing, and Google's required Limited Use statement. If the Drive code changes what it accesses, stores or sends, update the policy and `LEGAL_UPDATED` in `src/lib/site.ts` in the same change. Every page links to both policies from the footer.
+
+## Custom sheets
+
+On the create page, **Add a custom sheet** turns an Excel workbook into a source you can create sets from, like the built-in sheets. The file can come from this device or Google Drive. The info button beside "Choose a source" shows the format in the app.
+
+The format follows Striver's A2Z sheet: one row per problem on the first worksheet (it can have any name), with `SNo`, `Problem`, `Difficulty`, `Rating`, `LeetCodeURL` and `CodeforcesURL`. `SNo` and `Problem` are required, and each row needs at least one of the two links. A row with a `CodeforcesURL` is a Codeforces problem and needs a `Rating` (with no `Difficulty`, the rating sets the tier, using the Codeforces source's bands); any other row is a LeetCode problem and needs a `Difficulty`. Headers are matched loosely (`S. No.` and `LeetCode URL` work), and column order doesn't matter, because these files are made by hand. Extra columns are ignored.
+
+- `lib/excel/schema.ts` (`CUSTOM_SHEET`) defines the format; `lib/excel/custom-sheet.ts` validates it. As with imports, one bad row rejects the file, and every issue is listed with its row.
+- `lib/custom-sheets.ts` stores each sheet under `solve-problemset:sheet:<id>`, in this browser only. Names are unique, ignoring case.
+- A set made from one has `sheetId: "custom"` and keeps the sheet's name in `customSheetName`, so it still reads right after the sheet is removed. That name also links sets to their sheet for "Only new problems", including after the file is added again, and travels through Excel in the optional `CustomSheet` column.
+- LeetCode problems are picked by difficulty and Codeforces problems by rating range. A sheet with both shows both pickers in section 03 ("Set the problem mix"), either of which can be 0, and one set gets both (`pickMix` in `lib/generate.ts`). A sheet with only one platform shows just its picker.
+- With both links, the title opens Codeforces and LeetCode is offered beside it (`url` and `leetCodeUrl`), so sets need no extra field. Problem ids come from that link, so they stay stable if the sheet is reordered.
 
 ## Problem data
 
@@ -122,13 +135,13 @@ Each sheet loads lazily through `fetchSheetProblems`, so a remote source could r
 
 LeetCode and Codeforces are fetched by this app's server, never by the browser, and filtered down to problems worth practising. Each route caches its list in memory: once the list is stale it keeps serving the last good copy while a single refresh runs, and a failed refresh never takes the list away. The lists are sent as plain JSON, about 1.1 MB for Codeforces and 0.5 MB for LeetCode. Cloudflare compresses them at the edge to about 140 KB and 70 KB; a local `next start` sends them uncompressed. Don't gzip them in the route: the Workers runtime would compress them a second time.
 
-| | Codeforces | LeetCode |
-|---|---|---|
-| Upstream | Official API: `problemset.problems` and `contest.list` (2 calls, spaced for its 1-call-per-2-s limit) | The GraphQL problem list its own site uses (unofficial; about 37 pages of 100) |
-| Refresh | Every 6 h | Every 24 h |
-| Quality filter | Rated problems from regular rated rounds held since 2016 (no April Fools, Kotlin Heroes, unrated mirrors…), without the least-solved quarter at each rating | Free Algorithms problems with 500+ likes and at least 80% positive votes |
-| Pool (Oct 2026) | about 5,500 problems across 800–3500 | about 1,670 (397 E / 904 M / 372 H) |
-| Picked by | Rating range and count, spread evenly across the ratings in the range | Easy / Medium / Hard counts |
+|                 | Codeforces                                                                                                                                                  | LeetCode                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Upstream        | Official API: `problemset.problems` and `contest.list` (2 calls, spaced for its 1-call-per-2-s limit)                                                       | The GraphQL problem list its own site uses (unofficial; about 37 pages of 100) |
+| Refresh         | Every 6 h                                                                                                                                                   | Every 24 h                                                                     |
+| Quality filter  | Rated problems from regular rated rounds held since 2016 (no April Fools, Kotlin Heroes, unrated mirrors…), without the least-solved quarter at each rating | Free Algorithms problems with 500+ likes and at least 80% positive votes       |
+| Pool (Oct 2026) | about 5,500 problems across 800–3500                                                                                                                        | about 1,670 (397 E / 904 M / 372 H)                                            |
+| Picked by       | Rating range and count, spread evenly across the ratings in the range                                                                                       | Easy / Medium / Hard counts                                                    |
 
 The thresholds are constants at the top of `lib/sources/codeforces.ts` and `lib/sources/leetcode.ts`. Codeforces ratings map to tiers as below 1200 = Easy, below 1800 = Medium, and the rest Hard, and each problem keeps its exact rating.
 

@@ -150,7 +150,8 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 2px 14px;
-  margin-top: 2px;
+  /* Keeps this link 24px from the title link, centre to centre (WCAG 2.5.8). */
+  margin-top: 4px;
 }
 
 .topic {
