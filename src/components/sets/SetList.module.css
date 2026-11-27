@@ -597,3 +597,18 @@
     width: 36px;
   }
 }
+
+/* Cards and rows fade in when the list loads or the layout changes. */
+@media (prefers-reduced-motion: no-preference) {
+  .card,
+  .row {
+    animation: item-in 0.3s var(--ease) backwards;
+  }
+}
+
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

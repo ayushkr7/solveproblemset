@@ -197,7 +197,7 @@ export default async function LandingPage() {
       {/* ---------------- Capabilities ---------------- */}
       <section className={styles.section} aria-labelledby="features-title">
         <div className="container">
-          <SectionHead index="§ 01" title="What it does" id="features-title" />
+          <SectionHead index="01" title="What it does" id="features-title" />
           <ul className={styles.features}>
             {FEATURES.map((f) => (
               <li key={f.n} className={styles.feature}>
@@ -214,7 +214,7 @@ export default async function LandingPage() {
       {/* ---------------- Workflow ---------------- */}
       <section className={styles.section} aria-labelledby="workflow-title">
         <div className="container">
-          <SectionHead index="§ 02" title="The procedure" id="workflow-title" />
+          <SectionHead index="02" title="The procedure" id="workflow-title" />
           <ol className={styles.steps}>
             {STEPS.map((s) => (
               <li key={s.n} className={styles.step}>
@@ -232,7 +232,7 @@ export default async function LandingPage() {
       {/* ---------------- Timing model ---------------- */}
       <section className={styles.section} aria-labelledby="timing-title">
         <div className="container">
-          <SectionHead index="§ 03" title="How time is measured" id="timing-title" />
+          <SectionHead index="03" title="How time is measured" id="timing-title" />
           <div className={styles.timingGrid}>
             <div className={styles.timingCopy}>
               <p>
@@ -287,7 +287,7 @@ export default async function LandingPage() {
       {/* ---------------- Sources ---------------- */}
       <section className={styles.section} aria-labelledby="sources-title">
         <div className="container">
-          <SectionHead index="§ 04" title="Problem sources" id="sources-title" />
+          <SectionHead index="04" title="Problem sources" id="sources-title" />
           <ul className={styles.sources}>
             {live.map((s) => (
               <li key={s.id} className={styles.source}>
@@ -368,7 +368,15 @@ export default async function LandingPage() {
 function SectionHead({ index, title, id }: { index: string; title: string; id: string }) {
   return (
     <header className={styles.sectionHead}>
-      <span className={`mono ${styles.sectionIndex}`}>{index}</span>
+      <span className={`mono ${styles.sectionIndex}`}>
+        {/* Drafting registration mark: a circle with a crosshair running past it. */}
+        <svg className={styles.sectionMark} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="8" r="4.5" />
+          <path d="M8 0.5v15M0.5 8h15" />
+        </svg>
+        <span className="visually-hidden">Section </span>
+        {index}
+      </span>
       <h2 id={id} className={styles.sectionTitle}>
         {title}
       </h2>
