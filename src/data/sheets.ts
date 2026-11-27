@@ -34,17 +34,6 @@ async function loadLive(id: BuiltInSheetId): Promise<CatalogProblem[]> {
 // Each sheet's data file is a separate chunk, fetched only when that sheet is used.
 export const SHEETS: readonly SheetSource[] = [
   {
-    id: "leetcode",
-    name: "LeetCode",
-    shortName: "LC",
-    author: "leetcode.com",
-    description: "Free, well-liked problems fetched live: 500+ likes and at least 80% positive votes.",
-    homepage: "https://leetcode.com/problemset/",
-    kind: "live",
-    selectBy: "difficulty",
-    load: () => loadLive("leetcode"),
-  },
-  {
     id: "codeforces",
     name: "Codeforces",
     shortName: "CF",
@@ -54,6 +43,17 @@ export const SHEETS: readonly SheetSource[] = [
     kind: "live",
     selectBy: "rating",
     load: () => loadLive("codeforces"),
+  },
+  {
+    id: "leetcode",
+    name: "LeetCode",
+    shortName: "LC",
+    author: "leetcode.com",
+    description: "Free, well-liked problems fetched live: 500+ likes and at least 80% positive votes.",
+    homepage: "https://leetcode.com/problemset/",
+    kind: "live",
+    selectBy: "difficulty",
+    load: () => loadLive("leetcode"),
   },
   {
     id: "striver-a2z",

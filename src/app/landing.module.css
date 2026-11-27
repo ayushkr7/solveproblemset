@@ -1,7 +1,6 @@
 /* ---------- Hero ---------- */
 
 .hero {
-  border-bottom: 1px solid var(--rule-strong);
   padding-block: 40px 56px;
 }
 
@@ -313,7 +312,6 @@
 
 .section {
   padding-block: 56px;
-  border-bottom: 1px solid var(--rule);
 }
 
 @media (min-width: 1024px) {
@@ -394,11 +392,26 @@
   .features {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* An odd count: the last feature spans the row. */
+  .feature:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
 }
 
 @media (min-width: 1024px) {
+  /* Six tracks: three features on the first row, two on the second. */
   .features {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .feature {
+    grid-column: span 2;
+  }
+
+  /* Outranks the odd-count rule above. */
+  .features > .feature:nth-child(n + 4) {
+    grid-column: span 3;
   }
 
   .feature {

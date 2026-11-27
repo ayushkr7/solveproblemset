@@ -96,6 +96,10 @@ const BUILT_IN_SOURCES: readonly SourceOption[] = SHEETS.map((s) => ({
   split: null,
 }));
 
+// "Choose a source" shows live sources, then the person's own sheets, then the curated sheets (the add card comes last).
+const LIVE_SOURCES = BUILT_IN_SOURCES.filter((s) => s.live);
+const CURATED_SOURCES = BUILT_IN_SOURCES.filter((s) => !s.live);
+
 function customSource(sheet: CustomSheet): SourceOption {
   const ratings = sheet.problems.flatMap((p) => (isCodeforcesRow(p) && p.rating !== undefined ? [p.rating] : []));
   return {
@@ -176,7 +180,8 @@ export function CreateSetForm() {
   };
   const ratedCount = toCount(rawRatedCount);
   const rated = { min: ratingMin, max: ratingMax, count: ratedCount };
-  const sources = useMemo(() => [...BUILT_IN_SOURCES, ...customSheets.map(customSource)], [customSheets]);
+  const customSources = useMemo(() => customSheets.map(customSource), [customSheets]);
+  const sources = useMemo(() => [...LIVE_SOURCES, ...customSources, ...CURATED_SOURCES], [customSources]);
   // Undefined when nothing is selected, or the selected sheet was removed in another tab.
   const source = sources.find((s) => s.key === sourceKey);
   const sheetId = source?.sheetId ?? null;

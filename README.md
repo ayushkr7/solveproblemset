@@ -1,6 +1,6 @@
 # Solve Problemset
 
-A client-side DSA / competitive-programming practice tracker. Build personalised problem sets from Striver's A2Z and 180 sheets, NeetCode's Blind 75, live, quality-filtered pools from LeetCode (by difficulty) and Codeforces (by rating), or your own Excel sheet. Time every solve and resume where you left off. Sets persist in `localStorage`.
+A client-side DSA / competitive-programming practice tracker. Build personalised problem sets from live, quality-filtered pools from Codeforces (by rating) and LeetCode (by difficulty), your own Excel sheet, Striver's A2Z and 180 sheets, or NeetCode's Blind 75. Time every solve and resume where you left off. Sets persist in `localStorage`.
 
 ```bash
 npm install

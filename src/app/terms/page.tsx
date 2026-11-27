@@ -37,8 +37,8 @@ const SECTIONS: LegalSection[] = [
     title: "Description of the Service",
     body: (
       <p>
-        The Service allows you to create practice sets from curated problem sheets, from LeetCode and Codeforces, and
-        from problem sheets you add, to time your practice, and to import and export sets as Excel workbooks, either on
+        The Service allows you to create practice sets from Codeforces and LeetCode, from problem sheets you add, and
+        from curated problem sheets, to time your practice, and to import and export sets as Excel workbooks, either on
         your device or in your Google Drive. The Service is provided free of charge and does not require an account. We
         may add, modify or remove features, or suspend or discontinue the Service, at any time and without notice.
       </p>
@@ -88,9 +88,9 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          Problem titles, difficulty labels and links are sourced from takeUforward (Striver&rsquo;s sheets), NeetCode,
-          LeetCode and Codeforces, and remain the property of their respective owners. Their names and trademarks are
-          used solely to identify the problems concerned.{" "}
+          Problem titles, difficulty labels and links are sourced from Codeforces, LeetCode, takeUforward
+          (Striver&rsquo;s sheets) and NeetCode, and remain the property of their respective owners. Their names and
+          trademarks are used solely to identify the problems concerned.{" "}
           <strong>{SITE.name} is not affiliated with, endorsed by or sponsored by any of them.</strong>
         </p>
         <p>
@@ -250,7 +250,7 @@ export default function TermsPage() {
           <li>The Service is free, requires no account and is provided without warranty.</li>
           <li>Your sets are stored in your browser; export a workbook to keep a backup.</li>
           <li>The Google Drive features are optional and access only the files you save or select.</li>
-          <li>{SITE.name} is not affiliated with takeUforward, NeetCode, LeetCode or Codeforces.</li>
+          <li>{SITE.name} is not affiliated with Codeforces, LeetCode, takeUforward or NeetCode.</li>
           <li>You agree to use the Service lawfully and not to disrupt it.</li>
         </ul>
       }

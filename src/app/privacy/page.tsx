@@ -129,7 +129,7 @@ const SECTIONS: LegalSection[] = [
           {ext("https://www.cloudflare.com/privacypolicy/", "Cloudflare Privacy Policy")}.
         </p>
         <p>
-          Problem lists from LeetCode and Codeforces are obtained from those sites&rsquo; public listings and do not
+          Problem lists from Codeforces and LeetCode are obtained from those sites&rsquo; public listings and do not
           involve any information about you.
         </p>
       </>
@@ -151,8 +151,8 @@ const SECTIONS: LegalSection[] = [
     title: "Third-party websites",
     body: (
       <p>
-        Problems in the Service link to the websites that publish them, including takeUforward, NeetCode, LeetCode and
-        Codeforces. These websites are not operated by us, and their own privacy policies apply when you visit them.
+        Problems in the Service link to the websites that publish them, including Codeforces, LeetCode, takeUforward and
+        NeetCode. These websites are not operated by us, and their own privacy policies apply when you visit them.
       </p>
     ),
   },
