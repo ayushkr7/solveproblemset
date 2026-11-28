@@ -315,7 +315,7 @@ function PreviewPanel({
       onImported(outcome, items);
     } catch (err) {
       setSaveError(
-        `${err instanceof StorageWriteError ? err.message : "The sets couldn't be saved."} Nothing was imported — your existing sets are unchanged.`,
+        `${err instanceof StorageWriteError ? err.message : "The sets couldn't be saved."} Nothing was imported - your existing sets are unchanged.`,
       );
     } finally {
       setSaving(false);
@@ -333,7 +333,7 @@ function PreviewPanel({
               {preview.format < FORMAT_VERSION ? " (earlier single-set format)" : ""}. Review the sets below, then
               confirm.
               {conflicts > 0 &&
-                ` ${conflicts === 1 ? "One set has a name" : `${conflicts} sets have names`} already in use — rename or skip ${conflicts === 1 ? "it" : "them"}.`}{" "}
+                ` ${conflicts === 1 ? "One set has a name" : `${conflicts} sets have names`} already in use - rename or skip ${conflicts === 1 ? "it" : "them"}.`}{" "}
               Existing sets are never changed.
             </p>
           </DialogDescription>
@@ -619,7 +619,7 @@ function FormatGuideDialog({
               </li>
               <li>
                 You’ll see a preview of the sets before confirming. If a name matches a set you already have, or another
-                set in the file, rename or skip it there — existing sets are never overwritten.
+                set in the file, rename or skip it there - existing sets are never overwritten.
               </li>
               <li>Imported timers are never running. A timer that was running at export is saved as Paused.</li>
               <li>

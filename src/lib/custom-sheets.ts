@@ -87,7 +87,7 @@ export function getCustomSheets(): CustomSheet[] {
 }
 
 // ---------------------------------------------------------------------------
-// Mutations — saving throws StorageWriteError on failure.
+// Mutations - saving throws StorageWriteError on failure.
 
 export function buildCustomSheet(
   input: { name: string; fileName: string; problems: CatalogProblem[] },

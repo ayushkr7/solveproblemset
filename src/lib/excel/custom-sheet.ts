@@ -93,13 +93,13 @@ function parseRow(rec: Rec<Key>, errors: string[]): CatalogProblem | null {
 
   // Codeforces problems are picked by rating, LeetCode ones by difficulty.
   if (codeforcesUrl && rating === "blank") {
-    errors.push(`${rec.at("rating")}: add a Rating — Codeforces problems are picked by rating.`);
+    errors.push(`${rec.at("rating")}: add a Rating - Codeforces problems are picked by rating.`);
   }
   const diffCell = rec.get("difficulty");
   const difficulty = lookup(diffCell, DIFFICULTY_VALUE);
   if (isBlank(diffCell)) {
     if (isBlank(codeforcesCell) && leetCodeUrl) {
-      errors.push(`${rec.at("difficulty")}: add a Difficulty — LeetCode problems are picked by difficulty.`);
+      errors.push(`${rec.at("difficulty")}: add a Difficulty - LeetCode problems are picked by difficulty.`);
     }
   } else if (!difficulty) {
     errors.push(

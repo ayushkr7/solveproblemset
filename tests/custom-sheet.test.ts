@@ -246,7 +246,7 @@ test("every invalid row is reported with its row, and nothing is returned", () =
     /row 6: Problem is longer than 200/,
     /row 7: Problem must be text/,
     /row 8: Difficulty “Brutal” isn't valid. Use Easy, Medium or Hard/,
-    /row 9: add a Difficulty — LeetCode problems are picked by difficulty/,
+    /row 9: add a Difficulty - LeetCode problems are picked by difficulty/,
     /row 10: add a LeetCodeURL or a CodeforcesURL/,
     /row 11: LeetCodeURL “not a link” isn't a valid web address/,
     /row 12: CodeforcesURL “nope” isn't a valid web address/,
@@ -522,11 +522,11 @@ test("urlKey ignores fragments, trailing slashes and case, but not the query", (
 test("each platform needs what it's picked by: LeetCode a Difficulty, Codeforces a Rating", () => {
   assert.match(
     errors(parseCustomSheet([sheet([HEAD, row(1, { lc: null, cf: `${CF}1/A`, difficulty: "Easy" })])])),
-    /row 2: add a Rating — Codeforces problems are picked by rating/,
+    /row 2: add a Rating - Codeforces problems are picked by rating/,
   );
   assert.match(
     errors(parseCustomSheet([sheet([HEAD, row(1, { difficulty: null, rating: 1200 })])])),
-    /row 2: add a Difficulty — LeetCode problems are picked by difficulty/,
+    /row 2: add a Difficulty - LeetCode problems are picked by difficulty/,
   );
   // A row with both links is a Codeforces problem: a Rating is enough.
   ok(parseCustomSheet([sheet([HEAD, row(1, { cf: `${CF}1/A`, difficulty: null, rating: 1200 })])]));

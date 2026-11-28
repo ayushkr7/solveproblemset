@@ -80,7 +80,7 @@ async function openWorkbook<R>(data: ArrayBuffer, parse: Parse<R>): Promise<R | 
     return parse(await readXlsx(data));
   } catch {
     return importFailure(
-      "The workbook couldn't be opened — it may be damaged. Open it in Excel, save it again and retry.",
+      "The workbook couldn't be opened - it may be damaged. Open it in Excel, save it again and retry.",
     );
   }
 }

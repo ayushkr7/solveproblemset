@@ -28,7 +28,7 @@ export function SiteHeader() {
   return (
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
-        <Link href="/" className={styles.home} aria-label="Solve Problemset — home">
+        <Link href="/" className={styles.home} aria-label="Solve Problemset - home">
           <Logo />
         </Link>
         <nav aria-label="Main" className={styles.nav}>

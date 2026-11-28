@@ -1,6 +1,6 @@
 /**
  * Adapters from the source files (a2zproblemset.ts, striver180problemset.ts,
- * neetcodeBlind75.ts — the source of truth for each sheet) to CatalogProblem.
+ * neetcodeBlind75.ts - the source of truth for each sheet) to CatalogProblem.
  * Kept free of data imports so each sheet's file is loaded only when needed.
  */
 import type { CatalogProblem, Difficulty } from "../lib/types";

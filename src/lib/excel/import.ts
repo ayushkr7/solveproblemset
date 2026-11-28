@@ -190,7 +190,7 @@ function readSheet<K extends string>(
       const similar = tables.find((t) => valueKey(t.name) === valueKey(spec.name));
       errors.push(
         similar
-          ? `Rename the worksheet “${similar.name}” to “${spec.name}” — worksheet names must match exactly.`
+          ? `Rename the worksheet “${similar.name}” to “${spec.name}” - worksheet names must match exactly.`
           : `Missing the “${spec.name}” worksheet. Found: ${tables.map((t) => `“${t.name}”`).join(", ")}.`,
       );
     }
@@ -232,7 +232,7 @@ export function readTable<K extends string>(
   if (missing.length > 0) {
     const names = missing.map((c) => {
       const near = [...found.keys()].find((h) => valueKey(h) === valueKey(c.header));
-      return near ? `“${c.header}” (found “${near}” — check the spelling)` : `“${c.header}”`;
+      return near ? `“${c.header}” (found “${near}” - check the spelling)` : `“${c.header}”`;
     });
     errors.push(`${sheetName}: missing required column${missing.length > 1 ? "s" : ""} ${names.join(", ")} in row 1.`);
     return null;
@@ -711,7 +711,7 @@ export function nameTaken(name: string, sets: readonly Pick<ProblemSet, "name">[
   return sets.some((s) => nameKey(s.name) === key);
 }
 
-/** "Arrays" → "Arrays (2)", "Arrays (3)", … — the first name not in use, within NAME_MAX. */
+/** "Arrays" → "Arrays (2)", "Arrays (3)", … - the first name not in use, within NAME_MAX. */
 export function suggestName(name: string, sets: readonly Pick<ProblemSet, "name">[]): string {
   const base = name.trim().replace(/\s\(\d+\)$/, "");
   for (let n = 2; ; n++) {

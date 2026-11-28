@@ -382,7 +382,7 @@ test("export file names", () => {
     exportFileName([{ name: "a" }, { name: "b" }, { name: "c" }], now),
     "DSA_3_Problem_Sets_2026-10-27.xlsx",
   );
-  assert.equal(exportFileName([{ name: "Graphs — week 1!" }], now), "Graphs_week_1_2026-10-27.xlsx");
+  assert.equal(exportFileName([{ name: "Graphs - week 1!" }], now), "Graphs_week_1_2026-10-27.xlsx");
   assert.equal(exportFileName([{ name: "???" }], now), "DSA_Practice_Set_2026-10-27.xlsx");
 });
 

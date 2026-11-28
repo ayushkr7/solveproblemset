@@ -2,7 +2,7 @@
   "name": "solve-problemset",
   "version": "0.1.0",
   "private": true,
-  "description": "Solve Problemset — a DSA & competitive programming practice tracker with personalised problem sets and precise per-problem timing.",
+  "description": "Solve Problemset - a DSA & competitive programming practice tracker with personalised problem sets and precise per-problem timing.",
   "scripts": {
     "build": "next build",
     "dev": "next dev",

@@ -194,7 +194,7 @@ function DetailSkeleton() {
 function NotFound() {
   return (
     <div className={`container page ${styles.state}`}>
-      <span className="label">Error 404 — Set not found</span>
+      <span className="label">Error 404 - Set not found</span>
       <h1 className={styles.stateTitle}>This set isn&rsquo;t on file.</h1>
       <p className="muted">
         It may have been deleted, or it was created in a different browser. Sets are stored locally on each device.
@@ -215,7 +215,7 @@ function Unreadable({ id }: { id: string }) {
   const [confirm, setConfirm] = useState(false);
   return (
     <div className={`container page ${styles.state}`}>
-      <span className="label">Error — Unreadable data</span>
+      <span className="label">Error - Unreadable data</span>
       <h1 className={styles.stateTitle}>This set&rsquo;s saved data is damaged.</h1>
       <p className="muted">
         The record in local storage couldn&rsquo;t be read, possibly due to a manual edit. You can remove it and create

@@ -25,7 +25,7 @@ const FEATURES = [
   {
     n: "03",
     title: "Split timing",
-    body: "Each tick records the time since your previous solve — so you see exactly how long every individual problem took.",
+    body: "Each tick records the time since your previous solve - so you see exactly how long every individual problem took.",
     spec: "Δt between consecutive solves",
   },
   {
@@ -63,7 +63,7 @@ const STEPS = [
   {
     n: "D",
     title: "Review",
-    body: "Revisit any previous set to see completion and timings — or resume right where you stopped.",
+    body: "Revisit any previous set to see completion and timings - or resume right where you stopped.",
   },
 ];
 
@@ -234,7 +234,7 @@ export default async function LandingPage() {
             <div className={styles.timingCopy}>
               <p>
                 The session clock only advances while it&rsquo;s running. When you mark a problem solved, its time is
-                the active time since your previous solve — or since you pressed Start, for the first one.
+                the active time since your previous solve - or since you pressed Start, for the first one.
               </p>
               <p className="muted">
                 Breaks are free: pause for coffee and the gap is simply not counted. Unticking your latest solve hands

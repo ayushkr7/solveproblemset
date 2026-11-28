@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 /**
  * Current wall-clock time, re-rendering every `intervalMs` while `active`.
- * Display only — durations are always computed from stored timestamps, so a
+ * Display only - durations are always computed from stored timestamps, so a
  * throttled background tab can't make recorded times drift.
  */
 export function useNow(active: boolean, intervalMs = 250): number {

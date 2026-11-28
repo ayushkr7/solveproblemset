@@ -319,7 +319,7 @@ export function CreateSetForm() {
   return (
     <form className={styles.layout} onSubmit={onSubmit} noValidate aria-busy={submitting}>
       <div className={styles.sections}>
-        {/* 01 — Name */}
+        {/* 01 - Name */}
         <section className={styles.section} aria-labelledby="sec-name">
           <SectionLabel n="01" id="sec-name" title="Name the set" />
           <Field invalid={!!errors.name}>
@@ -348,7 +348,7 @@ export function CreateSetForm() {
           </Field>
         </section>
 
-        {/* 02 — Source */}
+        {/* 02 - Source */}
         <section className={styles.section} aria-labelledby="sec-source">
           <div className={styles.sectionHead}>
             <SectionLabel n="02" id="sec-source" title="Choose a source" />
@@ -458,7 +458,7 @@ export function CreateSetForm() {
                 <strong>Only new problems</strong>
                 <span className="field__hint">
                   {" "}
-                  — skip the {usedCount === null ? "" : `${usedCount} `}problems already in your other{" "}
+                  - skip the {usedCount === null ? "" : `${usedCount} `}problems already in your other{" "}
                   {source?.custom ? source.name : source?.shortName} sets.
                 </span>
               </span>
@@ -466,7 +466,7 @@ export function CreateSetForm() {
           )}
         </section>
 
-        {/* 03 — Problem mix */}
+        {/* 03 - Problem mix */}
         <section ref={mixRef} className={styles.section} aria-labelledby="sec-mix">
           <SectionLabel
             n="03"

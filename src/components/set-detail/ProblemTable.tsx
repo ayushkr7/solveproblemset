@@ -152,7 +152,7 @@ function TimeCell({ problem: p, onSave }: { problem: SetProblem; onSave: (minute
   if (!p.solved)
     return (
       <span className={styles.timeEmpty} aria-label="No time">
-        —
+        -
       </span>
     );
 

@@ -99,7 +99,7 @@ export const SETS_SHEET: SheetSpec<
   columns: [
     {
       ...SET_ID_COLUMN,
-      format: `Your own short label, e.g. S1 or 1 — up to ${SET_ID_MAX} characters, unique in this sheet (not case-sensitive).`,
+      format: `Your own short label, e.g. S1 or 1 - up to ${SET_ID_MAX} characters, unique in this sheet (not case-sensitive).`,
     },
     { key: "name", header: "SetName", required: true, format: "Text, 1–60 characters.", width: 32 },
     {
@@ -159,7 +159,7 @@ export const SETS_SHEET: SheetSpec<
     },
     {
       setId: "S2",
-      name: "Graphs — week 1",
+      name: "Graphs - week 1",
       source: "NeetCode Blind 75",
       createdAt: "2026-10-26T09:30:00Z",
       elapsed: "0",
@@ -416,7 +416,7 @@ export const CUSTOM_SHEET: SheetSpec<"leetCodeUrl" | "codeforcesUrl" | "sNo" | "
 };
 
 // ---------------------------------------------------------------------------
-// Version 1 (one set per file) — import only.
+// Version 1 (one set per file) - import only.
 
 export const V1_SET_SHEET: SheetSpec<"name" | "source" | "createdAt"> = {
   name: "ProblemSet",

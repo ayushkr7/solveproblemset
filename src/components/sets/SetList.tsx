@@ -218,7 +218,7 @@ function SetListPage() {
                 </Button>
               </>
             ) : (
-              <span className={styles.count}>No sets yet — import a workbook or create a set.</span>
+              <span className={styles.count}>No sets yet - import a workbook or create a set.</span>
             )}
           </div>
 
@@ -613,7 +613,7 @@ function EmptyState() {
         The drawing board is empty.
       </h2>
       <p className="muted">
-        Create your first problem set — choose a sheet, set the difficulty mix, and start the clock.
+        Create your first problem set - choose a sheet, set the difficulty mix, and start the clock.
       </p>
       <Link href="/create" className="btn btn--primary btn--lg">
         Create your first set <ArrowRightIcon />

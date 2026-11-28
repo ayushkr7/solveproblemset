@@ -23,12 +23,12 @@ const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2
 
 export function formatDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : dateFmt.format(d);
+  return Number.isNaN(d.getTime()) ? "-" : dateFmt.format(d);
 }
 
 export function formatDateTime(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : `${dateFmt.format(d)}, ${timeFmt.format(d)}`;
+  return Number.isNaN(d.getTime()) ? "-" : `${dateFmt.format(d)}, ${timeFmt.format(d)}`;
 }
 
 export function plural(n: number, word: string, pluralWord = `${word}s`): string {

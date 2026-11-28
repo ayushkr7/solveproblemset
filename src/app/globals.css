@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Solve Problemset — design tokens & shared components
+   Solve Problemset - design tokens & shared components
    Light = drafting paper. Dark = blueprint. Swiss grid, hairline rules.
    ========================================================================== */
 
@@ -31,7 +31,7 @@
   --accent-line: rgb(29 73 194 / 0.45);
   --focus: #1d49c2;
 
-  /* Difficulty — paired with a text label + tick glyph, never colour alone */
+  /* Difficulty - paired with a text label + tick glyph, never colour alone */
   --easy: #0b6446;
   --easy-bg: #cde2d4;
   --medium: #7a4900;
@@ -999,7 +999,7 @@ main:focus {
 }
 
 .dialog__list li::before {
-  content: "—";
+  content: "-";
   color: var(--ink-3);
   font-family: var(--font-mono);
 }

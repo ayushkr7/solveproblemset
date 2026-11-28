@@ -19,7 +19,7 @@ import { STORAGE_KEYS, keysWithPrefix, readRaw, removeRaw, writeRaw } from "./st
 import { isSheetId } from "@/data/sheets";
 
 // ---------------------------------------------------------------------------
-// Parsing / validation — saved data is untrusted (hand edits, old versions).
+// Parsing / validation - saved data is untrusted (hand edits, old versions).
 
 const STATUSES: readonly TimerStatus[] = ["idle", "running", "paused", "stopped"];
 
@@ -174,7 +174,7 @@ export function getListSnapshot(): ProblemSet[] {
 }
 
 // ---------------------------------------------------------------------------
-// Mutations — all throw StorageWriteError on failure.
+// Mutations - all throw StorageWriteError on failure.
 
 export function saveSet(set: ProblemSet): void {
   writeRaw(STORAGE_KEYS.set(set.id), JSON.stringify(set));

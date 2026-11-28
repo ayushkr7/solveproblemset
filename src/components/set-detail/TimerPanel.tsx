@@ -84,7 +84,7 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
             {allSolved ? "All problems solved" : stats.solved === 0 ? "First problem" : "Current problem"}
           </span>
           <span className={`mono tabular ${styles.splitValue}`}>
-            {status === "idle" || allSolved ? "—" : formatMinSec(split)}
+            {status === "idle" || allSolved ? "-" : formatMinSec(split)}
           </span>
         </div>
       </div>
@@ -109,7 +109,7 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
         <div>
           <dt className="label">Avg / problem</dt>
           <dd className="mono tabular">
-            {stats.averageMs === null ? "—" : formatMinutes(stats.averageMs)}
+            {stats.averageMs === null ? "-" : formatMinutes(stats.averageMs)}
             {stats.averageMs !== null && <small> min</small>}
           </dd>
         </div>
@@ -125,7 +125,7 @@ export function TimerPanel({ set, now, actions }: { set: ProblemSet; now: number
 
       <p className={styles.note}>
         {status === "stopped"
-          ? "Session stopped. Progress and timings are saved — resume any time."
+          ? "Session stopped. Progress and timings are saved - resume any time."
           : status === "paused"
             ? "Paused time is not counted towards any problem."
             : "Tick a problem when solved; its time is the split since your last solve."}
