@@ -556,7 +556,8 @@ test("one set from a mixed sheet: LeetCode by difficulty plus Codeforces by rati
   );
   const lc = problems.filter((p) => !isCodeforcesRow(p));
   const cf = problems.filter(isCodeforcesRow);
-  const picked = pickMix(lc, { easy: 1, medium: 1, hard: 0 }, cf, { min: 1200, max: 1600, count: 2 });
+  // Two Medium rows compete for one slot; a fixed draw always takes the first (Problem 2).
+  const picked = pickMix(lc, { easy: 1, medium: 1, hard: 0 }, cf, { min: 1200, max: 1600, count: 2 }, () => 0);
   assert.equal(picked.length, 4);
   assert.deepEqual(
     picked.map((p) => (isCodeforcesRow(p) ? `CF ${p.rating}` : `LC ${p.difficulty}`)),
