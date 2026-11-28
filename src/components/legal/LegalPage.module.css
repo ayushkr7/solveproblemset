@@ -142,7 +142,7 @@
   padding: 20px 22px;
   border: 1px solid var(--accent-line);
   border-left-width: 3px;
-  background: var(--accent-soft);
+  background: var(--surface);
 }
 
 .summaryTitle {

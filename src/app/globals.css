@@ -9,40 +9,40 @@
   --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
 
   /* Paper */
-  --paper: #f2efe6;
-  --paper-2: #e9e5d9;
-  --surface: #f8f6f0;
-  --surface-hover: #fffdf8;
-  --ink: #14161b;
-  --ink-2: #474c57;
-  --ink-3: #5f646e; /* ≥ 4.5:1 on --paper-2 (WCAG AA small text) */
-  --rule: #d3cdbd;
-  --rule-strong: #14161b;
-  --grid-minor: rgb(31 79 209 / 0.055);
-  --grid-major: rgb(31 79 209 / 0.1);
-  --grain-opacity: 0.38;
+  --paper: #e4dfd1;
+  --paper-2: #dbd5c4;
+  --surface: #ebe7db;
+  --surface-hover: #f0ece2;
+  --ink: #1a1c21;
+  --ink-2: #41454e;
+  --ink-3: #565b64; /* ≥ 4.5:1 on --paper-2 (WCAG AA small text) */
+  --rule: #c4bdaa;
+  --rule-strong: #1a1c21;
+  --grid-minor: rgb(29 73 194 / 0.045);
+  --grid-major: rgb(29 73 194 / 0.085);
+  --grain-opacity: 0.3;
   --grain-blend: multiply;
 
   /* Accent: blueprint blue */
-  --accent: #1f4fd1;
-  --accent-hover: #173fae;
+  --accent: #1d49c2;
+  --accent-hover: #163a9e;
   --accent-ink: #ffffff;
-  --accent-soft: rgb(31 79 209 / 0.08);
-  --accent-line: rgb(31 79 209 / 0.45);
-  --focus: #1f4fd1;
+  --accent-soft: rgb(29 73 194 / 0.09);
+  --accent-line: rgb(29 73 194 / 0.45);
+  --focus: #1d49c2;
 
   /* Difficulty — paired with a text label + tick glyph, never colour alone */
-  --easy: #0d6e4c;
-  --easy-bg: #dcefe5;
-  --medium: #8a5300;
-  --medium-bg: #f5e6c8;
-  --hard: #b0202a;
-  --hard-bg: #f6dcda;
+  --easy: #0b6446;
+  --easy-bg: #cde2d4;
+  --medium: #7a4900;
+  --medium-bg: #eadab5;
+  --hard: #a01d26;
+  --hard-bg: #ebcfcb;
 
-  --danger: #b0202a;
-  --danger-hover: #8f1820;
-  --danger-soft: rgb(176 32 42 / 0.08);
-  --success: #0d6e4c;
+  --danger: #a01d26;
+  --danger-hover: #82161d;
+  --danger-soft: rgb(160 29 38 / 0.08);
+  --success: #0b6446;
 
   --shadow-dialog: 0 24px 60px -20px rgb(20 22 27 / 0.35);
   --backdrop: rgb(20 22 27 / 0.45);
@@ -63,7 +63,7 @@
   --surface-hover: #13243f;
   --ink: #e7edf7;
   --ink-2: #aab7cc;
-  --ink-3: #8191aa;
+  --ink-3: #8696ae; /* ≥ 4.5:1 on solved rows (accent-soft over --surface) */
   --rule: #213555;
   --rule-strong: #c8d5ea;
   --grid-minor: rgb(122 167 255 / 0.05);
