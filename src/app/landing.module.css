@@ -293,10 +293,6 @@
   background: var(--accent);
 }
 
-.figCaption {
-  padding-left: 2px;
-}
-
 @media (min-width: 480px) {
   .figRow {
     grid-template-columns: auto auto 1fr auto auto;

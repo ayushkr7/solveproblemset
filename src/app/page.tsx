@@ -187,9 +187,6 @@ export default async function LandingPage() {
                 <span className="label">75%</span>
               </div>
             </div>
-            <figcaption className={`label ${styles.figCaption}`}>
-              Fig. 1 — A set mid-session. Times are splits between solves.
-            </figcaption>
           </figure>
         </div>
       </section>
@@ -276,9 +273,6 @@ export default async function LandingPage() {
                   <b className="mono">P3</b> 9.5 min
                 </span>
               </div>
-              <figcaption className="label">
-                Fig. 2 — Recorded time = active time between consecutive solves.
-              </figcaption>
             </figure>
           </div>
         </div>
